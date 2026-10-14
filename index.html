@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Você me paga</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Você me paga</h1>
+      <p class="subtitle">Cole o link da nota fiscal (QR Code da NFC-e) para listar a compra.</p>
+
+      <form id="invoice-form">
+        <input
+          id="invoice-url"
+          type="url"
+          placeholder="https://dfe-portal.svrs.rs.gov.br/Dfe/QrCodeNFce?p=..."
+          required
+        />
+        <button id="submit-btn" type="submit">Consultar</button>
+      </form>
+
+      <p id="status" role="status" hidden></p>
+
+      <section id="result" hidden>
+        <div id="invoice-info" class="info"></div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Código</th>
+                <th class="num">Qtd</th>
+                <th>Un</th>
+                <th class="num">Preço un.</th>
+                <th class="num">Total</th>
+              </tr>
+            </thead>
+            <tbody id="items"></tbody>
+            <tfoot id="totals"></tfoot>
+          </table>
+        </div>
+        <div id="payments"></div>
+      </section>
+    </main>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
