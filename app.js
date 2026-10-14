@@ -1,4 +1,4 @@
-import { InvoiceBook } from "./invoices.mjs";
+import { InvoiceBook, sortItems } from "./invoices.mjs";
 import { ParticipantRoster } from "./participants.mjs";
 
 const participantForm = document.getElementById("participant-form");
@@ -16,6 +16,10 @@ const combinedItemsEl = document.getElementById("combined-items");
 const combinedTotalsEl = document.getElementById("combined-totals");
 const manualItemForm = document.getElementById("manual-item-form");
 const itemsStatusEl = document.getElementById("items-status");
+const itemEditDialog = document.getElementById("item-edit-dialog");
+const itemEditForm = document.getElementById("item-edit-form");
+const columnToggles = [...document.querySelectorAll(".column-visibility input[data-column]")];
+const sortStates = new Map();
 
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const quantity = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 });
@@ -30,14 +34,42 @@ function setParticipantStatus(message, isError = false) {
   participantStatusEl.classList.toggle("error", isError);
 }
 
+function sortTable(event) {
+  const button = event.target.closest("button[data-sort-column]");
+  if (!button) return;
+  const table = button.closest("table[data-sort-id]");
+  if (!table) return;
+
+  const sortId = table.dataset.sortId;
+  const current = sortStates.get(sortId);
+  const direction =
+    current?.column === button.dataset.sortColumn && current.direction === "asc" ? "desc" : "asc";
+  sortStates.set(sortId, { column: button.dataset.sortColumn, direction });
+  renderInvoiceBook();
+}
+
 function createParticipantButton(label, action, participant) {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "secondary-button";
+  button.className =
+    action === "edit"
+      ? "icon-button edit-icon"
+      : action === "remove"
+        ? "icon-button delete-icon"
+        : "secondary-button";
   button.dataset.action = action;
   button.dataset.participantId = participant.id;
-  button.textContent = label;
+  button.title = `${label} ${participant.name}`;
   button.setAttribute("aria-label", `${label} ${participant.name}`);
+  if (action === "edit") {
+    button.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>';
+  } else if (action === "remove") {
+    button.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>';
+  } else {
+    button.textContent = label;
+  }
   return button;
 }
 
@@ -198,28 +230,36 @@ function renderItemTable(
     allowRemoval = true,
     totalAmount,
     totalItems = items.length,
+    visibleColumns = getVisibleColumns(),
   } = {}
 ) {
-  const rows = items.map((item) => {
+  const sortId = body.closest("table")?.dataset.sortId ?? "combined";
+  const sortState = sortStates.get(sortId) ?? { column: "name", direction: "asc" };
+  const sortedItems = sortItems(items, sortState.column, sortState.direction);
+  const rows = sortedItems.map((item) => {
     const row = document.createElement("tr");
-    row.append(
-      cell(item.name),
-      cell(item.code || "-"),
-      cell(quantity.format(item.quantity), "num"),
-      cell(item.unit || "-"),
-      cell(money(item.unit_price), "num"),
-      cell(money(item.total_price), "num")
-    );
-    if (includeSource) row.append(cell(item.source));
+    const columns = [
+      ["name", item.name, ""],
+      ["code", item.code || "-", ""],
+      ["quantity", quantity.format(item.quantity), "num"],
+      ["unit", item.unit || "-", ""],
+      ["unit_price", money(item.unit_price), "num"],
+      ["total_price", money(item.total_price), "num"],
+    ];
+    if (includeSource) columns.push(["source", item.source, ""]);
+    for (const [column, value, className] of columns) {
+      const tableCell = cell(value, className);
+      tableCell.dataset.column = column;
+      tableCell.hidden = !includeSource && !visibleColumns.includes(column);
+      row.append(tableCell);
+    }
     if (allowRemoval) {
       const action = document.createElement("td");
-      const removeButton = document.createElement("button");
-      removeButton.type = "button";
-      removeButton.className = "secondary-button remove-item-button";
-      removeButton.dataset.itemId = item.id;
-      removeButton.textContent = "Remover";
-      removeButton.setAttribute("aria-label", `Remover ${item.name}`);
-      action.append(removeButton);
+      action.className = "actions-column";
+      const actions = document.createElement("div");
+      actions.className = "action-buttons";
+      actions.append(createItemActionButton("edit", item), createItemActionButton("remove", item));
+      action.append(actions);
       row.append(action);
     }
     return row;
@@ -228,7 +268,8 @@ function renderItemTable(
   if (!items.length) {
     const row = document.createElement("tr");
     const message = cell("Nenhum item nesta lista.");
-    message.colSpan = 6 + Number(includeSource) + Number(allowRemoval);
+    message.colSpan =
+      (includeSource ? 6 : visibleColumns.length) + Number(includeSource) + Number(allowRemoval);
     row.append(message);
     rows.push(row);
   }
@@ -236,12 +277,54 @@ function renderItemTable(
 
   const total = totalAmount ?? items.reduce((sum, item) => sum + Number(item.total_price), 0);
   const totalRow = document.createElement("tr");
-  const label = cell(`Total (${totalItems} ${totalItems === 1 ? "item" : "itens"})`);
-  label.colSpan = 5;
-  totalRow.append(label, cell(money(total), "num"));
-  if (includeSource) totalRow.append(cell(""));
-  if (allowRemoval) totalRow.append(cell(""));
+  const activeColumns = includeSource
+    ? ["name", "code", "quantity", "unit", "unit_price", "total_price", "source"]
+    : visibleColumns;
+  for (const column of activeColumns) {
+    const tableCell = cell("");
+    tableCell.dataset.column = column;
+    tableCell.hidden = !includeSource && !visibleColumns.includes(column);
+    if (column === "name") {
+      tableCell.textContent = `Total (${totalItems} ${totalItems === 1 ? "item" : "itens"})`;
+    } else if (column === "total_price") {
+      tableCell.textContent = money(total);
+      tableCell.className = "num";
+    }
+    totalRow.append(tableCell);
+  }
+  if (allowRemoval) {
+    const actionCell = cell("");
+    actionCell.className = "actions-column";
+    totalRow.append(actionCell);
+  }
   totals.replaceChildren(totalRow);
+}
+
+function createItemActionButton(action, item) {
+  const button = document.createElement("button");
+  const isEdit = action === "edit";
+  const label = isEdit ? "Editar" : "Remover";
+  button.type = "button";
+  button.className = `icon-button ${isEdit ? "edit-icon" : "delete-icon"}`;
+  button.dataset.itemAction = action;
+  button.dataset.itemId = item.id;
+  button.title = `${label} ${item.name}`;
+  button.setAttribute("aria-label", `${label} ${item.name}`);
+  button.innerHTML = isEdit
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>'
+    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>';
+  return button;
+}
+
+function getVisibleColumns() {
+  return ["name", ...columnToggles.filter((toggle) => toggle.checked).map((toggle) => toggle.dataset.column)];
+}
+
+function updateColumnVisibility() {
+  const visible = new Set(getVisibleColumns());
+  for (const cell of document.querySelectorAll(".consolidated-table [data-column]")) {
+    cell.hidden = !visible.has(cell.dataset.column);
+  }
 }
 
 function renderPayments(invoice, container) {
@@ -292,13 +375,22 @@ function renderInvoiceBook() {
     const table = document.createElement("div");
     table.className = "table-wrapper";
     const tableElement = document.createElement("table");
-    tableElement.append(createTableHead(false, false));
+    tableElement.dataset.sortId = invoice.id;
+    tableElement.append(
+      createTableHead(
+        false,
+        false,
+        ["name", "code", "quantity", "unit", "unit_price", "total_price"],
+        invoice.id
+      )
+    );
     const body = document.createElement("tbody");
     const totals = document.createElement("tfoot");
     tableElement.append(body, totals);
     table.append(tableElement);
     renderItemTable(body, totals, invoice.products, {
       allowRemoval: false,
+      visibleColumns: ["name", "code", "quantity", "unit", "unit_price", "total_price"],
       totalAmount: invoice.total_amount,
       totalItems: invoice.total_items,
     });
@@ -317,19 +409,54 @@ function renderInvoiceBook() {
   renderItemTable(combinedItemsEl, combinedTotalsEl, invoiceBook.listItems(), {
     includeSource: true,
   });
+  document.querySelector(".consolidated-table thead").replaceWith(
+    createTableHead(true, true, getVisibleColumns(), "combined")
+  );
+  updateColumnVisibility();
 }
 
-function createTableHead(includeSource, allowRemoval = true) {
+function createTableHead(
+  includeSource,
+  allowActions = true,
+  visibleColumns = getVisibleColumns(),
+  sortId = "combined"
+) {
   const head = document.createElement("thead");
   const row = document.createElement("tr");
-  const columns = ["Item", "Código", "Qtd", "Un", "Preço un.", "Total"];
-  if (includeSource) columns.push("Origem");
-  if (allowRemoval) columns.push("Ação");
-  for (const column of columns) {
+  const columns = [
+    ["name", "Item"],
+    ["code", "Código"],
+    ["quantity", "Qtd"],
+    ["unit", "Un"],
+    ["unit_price", "Preço un."],
+    ["total_price", "Total"],
+  ];
+  if (includeSource) columns.push(["source", "Origem"]);
+  for (const [key, label] of columns) {
     const header = document.createElement("th");
-    header.textContent = column;
-    if (["Qtd", "Preço un.", "Total"].includes(column)) header.className = "num";
+    header.dataset.column = key;
+    header.hidden = !visibleColumns.includes(key);
+    if (["quantity", "unit_price", "total_price"].includes(key)) header.className = "num";
+    const sortButton = document.createElement("button");
+    sortButton.type = "button";
+    sortButton.className = "sort-button";
+    sortButton.dataset.sortColumn = key;
+    sortButton.textContent = label;
+    const state = sortStates.get(sortId);
+    if (state?.column === key) {
+      header.setAttribute("aria-sort", state.direction === "asc" ? "ascending" : "descending");
+      sortButton.textContent += state.direction === "asc" ? " ▲" : " ▼";
+    } else {
+      header.setAttribute("aria-sort", "none");
+    }
+    header.append(sortButton);
     row.append(header);
+  }
+  if (allowActions) {
+    const actions = document.createElement("th");
+    actions.className = "actions-column";
+    actions.textContent = "Ações";
+    row.append(actions);
   }
   head.append(row);
   return head;
@@ -394,13 +521,28 @@ manualItemForm.addEventListener("submit", (event) => {
   }
 });
 
-function removeItem(event) {
-  const button = event.target.closest("button[data-item-id]");
+function handleItemAction(event) {
+  const button = event.target.closest("button[data-item-action]");
   if (!button) return;
+
+  if (button.dataset.itemAction === "edit") {
+    const item = invoiceBook.listItems().find((entry) => entry.id === button.dataset.itemId);
+    if (!item) return;
+    itemEditForm.dataset.itemId = item.id;
+    itemEditForm.elements.namedItem("name").value = item.name;
+    itemEditForm.elements.namedItem("code").value = item.code;
+    itemEditForm.elements.namedItem("quantity").value = item.quantity;
+    itemEditForm.elements.namedItem("unit").value = item.unit;
+    itemEditForm.elements.namedItem("unit_price").value = item.unit_price;
+    itemEditDialog.showModal();
+    itemEditForm.elements.namedItem("name").focus();
+    return;
+  }
+
   try {
     const item = invoiceBook.removeItem(button.dataset.itemId);
     renderInvoiceBook();
-    itemsStatusEl.textContent = `${item.name} removido da compra.`;
+    itemsStatusEl.textContent = `${item.name} removido da lista de itens.`;
     itemsStatusEl.classList.remove("error");
   } catch (error) {
     itemsStatusEl.textContent = error.message;
@@ -408,6 +550,32 @@ function removeItem(event) {
   }
 }
 
-invoicesListEl.addEventListener("click", removeItem);
-combinedItemsEl.addEventListener("click", removeItem);
+itemEditForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const formData = new FormData(itemEditForm);
+  try {
+    const item = invoiceBook.updateItem(itemEditForm.dataset.itemId, {
+      name: formData.get("name"),
+      code: formData.get("code"),
+      quantity: formData.get("quantity"),
+      unit: formData.get("unit"),
+      unit_price: formData.get("unit_price"),
+    });
+    itemEditDialog.close();
+    renderInvoiceBook();
+    itemsStatusEl.textContent = `${item.name} atualizado.`;
+    itemsStatusEl.classList.remove("error");
+  } catch (error) {
+    itemsStatusEl.textContent = error.message;
+    itemsStatusEl.classList.add("error");
+  }
+});
+
+document.getElementById("cancel-item-edit").addEventListener("click", () => itemEditDialog.close());
+for (const toggle of columnToggles) {
+  toggle.addEventListener("change", updateColumnVisibility);
+}
+combinedItemsEl.addEventListener("click", handleItemAction);
+invoicesListEl.addEventListener("click", sortTable);
+document.querySelector(".consolidated-table").addEventListener("click", sortTable);
 renderInvoiceBook();

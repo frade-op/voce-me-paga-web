@@ -81,7 +81,7 @@
         <p id="status" role="status" aria-live="polite" hidden></p>
       </section>
 
-      <section id="result" class="result-card" aria-label="Itens da compra">
+      <section id="result" class="result-card invoices-card" aria-label="Notas da compra">
         <div class="section-heading">
           <div>
             <h2>Notas da compra</h2>
@@ -90,48 +90,69 @@
         </div>
         <p id="invoices-empty" class="empty-state">As notas adicionadas aparecerão aqui.</p>
         <div id="invoices-list" class="invoices-list"></div>
-
-        <section class="combined-items" aria-labelledby="combined-items-title">
-          <div class="section-heading">
-            <div>
-              <h2 id="combined-items-title">Todos os itens</h2>
-              <p class="section-description">Itens das notas e itens adicionados manualmente.</p>
-            </div>
-          </div>
-
-          <form id="manual-item-form" class="manual-item-form">
-            <label class="visually-hidden" for="manual-item-name">Nome do item</label>
-            <input id="manual-item-name" name="name" type="text" maxlength="160" placeholder="Nome do item" required />
-            <label class="visually-hidden" for="manual-item-quantity">Quantidade</label>
-            <input id="manual-item-quantity" name="quantity" type="number" min="0.001" step="any" value="1" required />
-            <label class="visually-hidden" for="manual-item-unit">Unidade</label>
-            <input id="manual-item-unit" name="unit" type="text" maxlength="20" placeholder="Un." value="un." required />
-            <label class="visually-hidden" for="manual-item-price">Preço unitário</label>
-            <input id="manual-item-price" name="unit-price" type="number" min="0" step="0.01" placeholder="Preço unitário (R$)" required />
-            <button type="submit">Adicionar item</button>
-          </form>
-          <p id="items-status" class="participant-status" role="status" aria-live="polite"></p>
-
-          <div class="table-wrapper">
-            <table class="consolidated-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Código</th>
-                  <th class="num">Qtd</th>
-                  <th>Un</th>
-                  <th class="num">Preço un.</th>
-                  <th class="num">Total</th>
-                  <th>Origem</th>
-                  <th>Ação</th>
-                </tr>
-              </thead>
-              <tbody id="combined-items"></tbody>
-              <tfoot id="combined-totals"></tfoot>
-            </table>
-          </div>
-        </section>
       </section>
+
+      <section class="result-card combined-items" aria-labelledby="combined-items-title">
+        <div class="combined-heading">
+          <div>
+            <h2 id="combined-items-title">Todos os itens</h2>
+            <p class="section-description">Itens das notas e itens adicionados manualmente.</p>
+          </div>
+          <details class="column-menu">
+            <summary aria-label="Escolher colunas visíveis">Colunas</summary>
+            <fieldset class="column-visibility">
+              <legend>Colunas visíveis</legend>
+              <label><input type="checkbox" data-column="code" /> Código</label>
+              <label><input type="checkbox" data-column="quantity" checked /> Qtd</label>
+              <label><input type="checkbox" data-column="unit" checked /> Un</label>
+              <label><input type="checkbox" data-column="unit_price" /> Preço un.</label>
+              <label><input type="checkbox" data-column="total_price" checked /> Total</label>
+              <label><input type="checkbox" data-column="source" /> Origem</label>
+            </fieldset>
+          </details>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="consolidated-table" data-sort-id="combined">
+            <thead></thead>
+            <tbody id="combined-items"></tbody>
+            <tfoot id="combined-totals"></tfoot>
+          </table>
+        </div>
+
+        <p id="items-status" class="participant-status" role="status" aria-live="polite"></p>
+        <form id="manual-item-form" class="manual-item-form">
+          <label class="visually-hidden" for="manual-item-name">Nome do item</label>
+          <input id="manual-item-name" name="name" type="text" maxlength="160" placeholder="Nome do item" required />
+          <label class="visually-hidden" for="manual-item-quantity">Quantidade</label>
+          <input id="manual-item-quantity" name="quantity" type="number" min="0.001" step="any" value="1" required />
+          <label class="visually-hidden" for="manual-item-unit">Unidade</label>
+          <input id="manual-item-unit" name="unit" type="text" maxlength="20" placeholder="Un." value="un." required />
+          <label class="visually-hidden" for="manual-item-price">Preço unitário</label>
+          <input id="manual-item-price" name="unit-price" type="number" min="0" step="0.01" placeholder="Preço unitário (R$)" required />
+          <button type="submit">Adicionar item</button>
+        </form>
+      </section>
+
+      <dialog id="item-edit-dialog" aria-labelledby="item-edit-title">
+        <form id="item-edit-form" method="dialog">
+          <h2 id="item-edit-title">Editar item</h2>
+          <label for="edit-item-name">Item</label>
+          <input id="edit-item-name" name="name" type="text" maxlength="160" required />
+          <label for="edit-item-code">Código</label>
+          <input id="edit-item-code" name="code" type="text" maxlength="80" />
+          <label for="edit-item-quantity">Quantidade</label>
+          <input id="edit-item-quantity" name="quantity" type="number" min="0.001" step="any" required />
+          <label for="edit-item-unit">Unidade</label>
+          <input id="edit-item-unit" name="unit" type="text" maxlength="20" required />
+          <label for="edit-item-price">Preço unitário</label>
+          <input id="edit-item-price" name="unit_price" type="number" min="0" step="0.01" required />
+          <div class="dialog-actions">
+            <button id="cancel-item-edit" class="secondary-button" type="button">Cancelar</button>
+            <button type="submit">Salvar alterações</button>
+          </div>
+        </form>
+      </dialog>
 
       <footer class="page-footer">Feito para dividir a conta sem complicação.</footer>
     </main>

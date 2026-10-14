@@ -43,6 +43,21 @@ function cloneInvoice(invoice) {
   };
 }
 
+export function sortItems(items, column, direction = "asc") {
+  const multiplier = direction === "desc" ? -1 : 1;
+  return [...items].sort((left, right) => {
+    const leftValue = left[column];
+    const rightValue = right[column];
+    if (typeof leftValue === "number" && typeof rightValue === "number") {
+      return (leftValue - rightValue) * multiplier;
+    }
+    return String(leftValue ?? "").localeCompare(String(rightValue ?? ""), "pt-BR", {
+      numeric: true,
+      sensitivity: "base",
+    }) * multiplier;
+  });
+}
+
 export class InvoiceBook {
   #invoices = [];
   #items = [];
@@ -80,12 +95,14 @@ export class InvoiceBook {
         address: data.issuer?.address ?? "-",
       },
       payments: (data.payments ?? []).map((payment) => ({ ...payment })),
-      products: data.products.map(normalizeProduct),
+      products: data.products.map((product) => ({
+        ...normalizeProduct(product),
+        id: `item-${this.#nextItemId++}`,
+      })),
     };
 
     const items = invoice.products.map((product) => ({
       ...product,
-      id: `item-${this.#nextItemId++}`,
       invoiceId: id,
       source: this.#invoiceLabel(invoice),
     }));
@@ -125,8 +142,29 @@ export class InvoiceBook {
 
   removeItem(id) {
     const index = this.#items.findIndex((product) => product.id === id);
-    if (index >= 0) return this.#items.splice(index, 1)[0];
-    throw new Error("Item não encontrado.");
+    if (index < 0) throw new Error("Item não encontrado.");
+
+    return { ...this.#items.splice(index, 1)[0] };
+  }
+
+  updateItem(id, changes) {
+    const item = this.#items.find((product) => product.id === id);
+    if (!item) throw new Error("Item não encontrado.");
+    if (typeof changes.name !== "string" || !changes.name.trim()) {
+      throw new Error("Informe o nome do item.");
+    }
+
+    const normalized = normalizeProduct({
+      name: changes.name,
+      code: changes.code ?? "",
+      quantity: changes.quantity,
+      unit: changes.unit,
+      unit_price: changes.unit_price,
+      total_price:
+        Math.round(Number(changes.quantity) * Number(changes.unit_price) * 100) / 100,
+    });
+    Object.assign(item, normalized);
+    return { ...item };
   }
 
   #invoiceLabel(invoice) {

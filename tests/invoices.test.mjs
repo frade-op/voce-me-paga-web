@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { InvoiceBook } from "../invoices.mjs";
+import { InvoiceBook, sortItems } from "../invoices.mjs";
 
 function invoice(number, products = []) {
   return {
@@ -49,7 +49,7 @@ test("keeps returned invoice data separate from stored state", () => {
   assert.equal(book.listInvoices()[0].issuer.name, "Loja 10");
 });
 
-test("removes invoice items only from the consolidated list", () => {
+test("removes invoice items only from the consolidated list and preserves the record", () => {
   const book = new InvoiceBook();
   const created = book.addInvoice(invoice("10", [product("Arroz"), product("Feijão")]));
   const consolidatedItem = book.listItems()[0];
@@ -60,6 +60,36 @@ test("removes invoice items only from the consolidated list", () => {
   assert.equal(book.listInvoices()[0].total_amount, 100);
   assert.equal(book.listInvoices()[0].total_items, 2);
   assert.deepEqual(book.listItems().map(({ name }) => name), ["Feijão"]);
+});
+
+test("edits consolidated invoice items without changing the original invoice record", () => {
+  const book = new InvoiceBook();
+  const invoiceData = invoice("10", [product("Arroz")]);
+  invoiceData.total_amount = 10;
+  book.addInvoice(invoiceData);
+  const itemId = book.listItems()[0].id;
+  const updated = book.updateItem(itemId, {
+    name: "Arroz integral",
+    code: "B2",
+    quantity: "2",
+    unit: "pacote",
+    unit_price: "6.25",
+  });
+
+  assert.equal(updated.total_price, 12.5);
+  assert.deepEqual(book.listInvoices()[0].products, [
+    {
+      id: "item-1",
+      name: "Arroz",
+      code: "A1",
+      quantity: 1,
+      unit: "un.",
+      unit_price: 10,
+      total_price: 10,
+    },
+  ]);
+  assert.equal(book.listInvoices()[0].total_amount, 10);
+  assert.equal(book.listItems()[0].name, "Arroz integral");
 });
 
 test("adds manual items to the consolidated list and calculates total", () => {
@@ -99,4 +129,42 @@ test("rejects removal of unknown items", () => {
   const book = new InvoiceBook();
 
   assert.throws(() => book.removeItem("missing"), { message: "Item não encontrado." });
+});
+
+test("rejects invalid item edits without changing the original or consolidated item", () => {
+  const book = new InvoiceBook();
+  book.addInvoice(invoice("10", [product("Arroz")]));
+  const itemId = book.listItems()[0].id;
+
+  assert.throws(
+    () =>
+      book.updateItem(itemId, {
+        name: " ",
+        code: "B2",
+        quantity: "2",
+        unit: "un.",
+        unit_price: "3",
+      }),
+    { message: "Informe o nome do item." }
+  );
+  assert.equal(book.listItems()[0].name, "Arroz");
+  assert.equal(book.listInvoices()[0].products[0].name, "Arroz");
+});
+
+test("sorts text and numeric columns without mutating source items", () => {
+  const items = [
+    { name: "Item 10", quantity: 10 },
+    { name: "Item 2", quantity: 2 },
+    { name: "Água", quantity: 1 },
+  ];
+
+  assert.deepEqual(
+    sortItems(items, "name").map(({ name }) => name),
+    ["Água", "Item 2", "Item 10"]
+  );
+  assert.deepEqual(
+    sortItems(items, "quantity", "desc").map(({ quantity }) => quantity),
+    [10, 2, 1]
+  );
+  assert.deepEqual(items.map(({ name }) => name), ["Item 10", "Item 2", "Água"]);
 });

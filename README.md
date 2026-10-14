@@ -18,10 +18,15 @@ cada nota expansível e consolida seus itens em uma tabela editável.
 ## Estado do produto
 
 O app permite importar várias notas por URL e consultar cada nota importada em um painel expansível.
-Cada nota nova começa recolhida; o usuário abre o painel para conferir seus dados originais.
+Cada nota nova começa recolhida; o usuário abre o painel para conferir seus itens.
 Uma tabela consolidada reúne itens das notas e itens adicionados manualmente.
-Remover um item na tabela consolidada não altera os dados originais exibidos no painel da nota.
+Edite ou remova itens na tabela consolidada; as notas importadas permanecem imutáveis como registro.
 Itens manuais pedem nome, quantidade, unidade e preço unitário; total é calculado automaticamente.
+Notas importadas e tabela consolidada aparecem em cartões separados.
+Na tabela consolidada, Item e Ações ficam sempre visíveis; Código, Qtd, Un, Preço un., Total
+e Origem podem ser mostrados ou ocultados pelo menu no canto superior direito.
+Por padrão, Item, Qtd, Un, Total e Ações aparecem. O formulário de itens manuais fica abaixo da
+tabela. Cabeçalhos das tabelas ordenam itens em ordem crescente ou decrescente.
 O cadastro, a edição e a remoção de pagantes já funcionam antes ou depois da consulta da nota.
 A lista continua editável; associação de itens aos pagantes e cálculo da divisão ainda não existem.
 Os pagantes ficam apenas na página atual e não persistem após recarregar.
@@ -70,9 +75,14 @@ A interface se adapta a telas pequenas, mantém a tabela rolável horizontalment
 visível para navegação por teclado. O cadastro de pagantes aparece antes da consulta da nota e
 permite adicionar, editar e remover nomes sem atribuí-los aos produtos. Importe mais de uma nota;
 cada nota fica em um painel expansível, acima da tabela consolidada, e começa recolhida após
-importação. Detalhes da nota são somente leitura. Adicione ou remova itens na tabela consolidada;
-a coluna de ação permanece fixa à direita durante a rolagem horizontal. O logo fica em
-`images/logo.png`; preserve esse caminho ao publicar o front-end.
+importação. Os itens dentro de cada nota são somente leitura e não podem ser editados ou removidos.
+Edite ou remova itens apenas na tabela consolidada; os dados originais da nota permanecem intactos.
+Pagantes podem ser editados e removidos pelos ícones amarelo e vermelho, com tooltip.
+Configure colunas da tabela consolidada pelo menu no canto superior direito;
+Item e Ações permanecem visíveis. O formulário de item manual fica abaixo da tabela. Ordene
+qualquer tabela clicando nos cabeçalhos. Os ícones de edição e remoção têm tooltips. A coluna de
+ações permanece fixa à direita durante a rolagem horizontal. O logo fica em `images/logo.png`;
+preserve esse caminho ao publicar o front-end.
 
 ## Modo Caveman para assistentes de IA
 
