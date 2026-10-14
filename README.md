@@ -1,8 +1,8 @@
 # vc me paga — Web
 
-Front-end estático em HTML, CSS e JS para consultar uma NFC-e pelo link do QR Code.
-O app chama [invoice-searcher-api](https://github.com/frade-op/invoice-searcher-api) e exibe
-os dados, itens e pagamentos identificados na nota.
+Front-end estático em HTML, CSS e JS para reunir itens de várias NFC-e.
+O app consulta [invoice-searcher-api](https://github.com/frade-op/invoice-searcher-api), mantém
+cada nota expansível e consolida seus itens em uma tabela editável.
 
 **Assinatura:** “A nota lida. A conta dividida.”
 
@@ -17,9 +17,13 @@ os dados, itens e pagamentos identificados na nota.
 
 ## Estado do produto
 
-Hoje, o fluxo consulta uma nota por URL e lista os dados retornados pela API.
+O app permite importar várias notas por URL e consultar cada nota importada em um painel expansível.
+Cada nota nova começa recolhida; o usuário abre o painel para conferir seus dados originais.
+Uma tabela consolidada reúne itens das notas e itens adicionados manualmente.
+Remover um item na tabela consolidada não altera os dados originais exibidos no painel da nota.
+Itens manuais pedem nome, quantidade, unidade e preço unitário; total é calculado automaticamente.
 O cadastro, a edição e a remoção de pagantes já funcionam antes ou depois da consulta da nota.
-A lista continua editável; cálculo de valores e divisão de itens ainda não existem.
+A lista continua editável; associação de itens aos pagantes e cálculo da divisão ainda não existem.
 Os pagantes ficam apenas na página atual e não persistem após recarregar.
 Leitura de QR Code por câmera e cobranças Pix também não estão implementadas.
 
@@ -37,10 +41,10 @@ A leitura pela câmera depende de permissão do usuário e, em navegadores, de c
 
 ## Testes
 
-Execute os testes do gerenciamento de pagantes com Node.js:
+Execute os testes de pagantes e itens com Node.js:
 
 ```powershell
-node --test tests/participants.test.mjs
+node --test tests/participants.test.mjs tests/invoices.test.mjs
 ```
 
 ## Ambientes
@@ -64,9 +68,11 @@ A API precisa liberar a origem do front-end via CORS (variável `CORS_ORIGINS`).
 
 A interface se adapta a telas pequenas, mantém a tabela rolável horizontalmente e oferece foco
 visível para navegação por teclado. O cadastro de pagantes aparece antes da consulta da nota e
-permite adicionar, editar e remover nomes sem atribuí-los aos produtos. O logo fica em
-`images/logo.png`; preserve esse caminho ao
-publicar o front-end.
+permite adicionar, editar e remover nomes sem atribuí-los aos produtos. Importe mais de uma nota;
+cada nota fica em um painel expansível, acima da tabela consolidada, e começa recolhida após
+importação. Detalhes da nota são somente leitura. Adicione ou remova itens na tabela consolidada;
+a coluna de ação permanece fixa à direita durante a rolagem horizontal. O logo fica em
+`images/logo.png`; preserve esse caminho ao publicar o front-end.
 
 ## Modo Caveman para assistentes de IA
 

@@ -103,6 +103,84 @@ h1 {
   box-shadow: 0 10px 35px rgb(23 51 42 / 0.06);
 }
 
+.result-card > .section-heading {
+  margin-bottom: 1rem;
+}
+
+.invoices-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.invoice-accordion {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fbfdfc;
+}
+
+.invoice-accordion summary {
+  padding: 1rem 1.1rem;
+  color: var(--green-deep);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.invoice-accordion summary:focus-visible {
+  outline: 3px solid var(--green-action);
+  outline-offset: -3px;
+}
+
+.invoice-content {
+  display: grid;
+  gap: 1rem;
+  padding: 0 1rem 1rem;
+}
+
+.invoice-content .info {
+  margin: 0;
+}
+
+.invoice-payments {
+  color: #40574d;
+}
+
+.invoice-payments h3 {
+  margin: 0;
+  color: var(--green-dark);
+}
+
+.combined-items {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e7eeea;
+}
+
+.manual-item-form {
+  display: grid;
+  grid-template-columns: minmax(10rem, 2fr) minmax(6rem, 0.75fr) minmax(5rem, 0.6fr) minmax(9rem, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.manual-item-form input {
+  min-width: 0;
+}
+
+.manual-item-form button {
+  min-height: 48px;
+  padding-inline: 1rem;
+}
+
+.remove-item-button {
+  min-height: 38px;
+  padding: 0.45rem 0.7rem;
+  background: #fff;
+}
+
 .section-heading {
   display: flex;
   align-items: center;
@@ -310,6 +388,10 @@ table {
   white-space: nowrap;
 }
 
+.consolidated-table {
+  min-width: 850px;
+}
+
 th,
 td {
   padding: 0.75rem 0.85rem;
@@ -343,6 +425,24 @@ tfoot td {
   background: #f8fcf9;
   color: var(--green-dark);
   font-weight: 750;
+}
+
+.consolidated-table th:last-child,
+.consolidated-table td:last-child:not([colspan]) {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: #fff;
+  box-shadow: -8px 0 10px -8px rgb(2 44 34 / 0.3);
+}
+
+.consolidated-table th:last-child {
+  z-index: 2;
+  background: #f0fdf4;
+}
+
+.consolidated-table tfoot td:last-child {
+  background: #f8fcf9;
 }
 
 #payments {
@@ -395,6 +495,12 @@ tfoot td {
 
   form {
     flex-direction: column;
+  }
+
+  .manual-item-form {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .participant-row {

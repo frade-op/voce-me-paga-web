@@ -19,7 +19,7 @@
           <h1>vc me paga</h1>
           <p class="tagline">A nota lida. A conta dividida.</p>
           <p class="subtitle">
-            Cole o link da nota fiscal para conferir os itens da compra.
+            Reúna os itens de várias notas em uma só compra.
           </p>
         </div>
         <img
@@ -63,7 +63,7 @@
         <div class="section-heading">
           <div>
             <h2 id="lookup-title">Consultar nota fiscal</h2>
-            <p class="section-description">Use o link do QR Code da NFC-e.</p>
+            <p class="section-description">Adicione os links das notas que fazem parte da compra.</p>
           </div>
         </div>
 
@@ -72,34 +72,65 @@
           <input
             id="invoice-url"
             type="url"
-            placeholder="https://... (link do QR Code da NFC-e)"
+            placeholder="Link do QR Code da NFC-e"
             required
           />
-          <button id="submit-btn" type="submit">Ler nota</button>
+          <button id="submit-btn" type="submit">Adicionar nota</button>
         </form>
 
         <p id="status" role="status" aria-live="polite" hidden></p>
       </section>
 
-      <section id="result" class="result-card" aria-label="Dados da nota fiscal" hidden>
-        <div id="invoice-info" class="info"></div>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Código</th>
-                <th class="num">Qtd</th>
-                <th>Un</th>
-                <th class="num">Preço un.</th>
-                <th class="num">Total</th>
-              </tr>
-            </thead>
-            <tbody id="items"></tbody>
-            <tfoot id="totals"></tfoot>
-          </table>
+      <section id="result" class="result-card" aria-label="Itens da compra">
+        <div class="section-heading">
+          <div>
+            <h2>Notas da compra</h2>
+            <p class="section-description">Abra cada nota para conferir os itens importados.</p>
+          </div>
         </div>
-        <div id="payments"></div>
+        <p id="invoices-empty" class="empty-state">As notas adicionadas aparecerão aqui.</p>
+        <div id="invoices-list" class="invoices-list"></div>
+
+        <section class="combined-items" aria-labelledby="combined-items-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="combined-items-title">Todos os itens</h2>
+              <p class="section-description">Itens das notas e itens adicionados manualmente.</p>
+            </div>
+          </div>
+
+          <form id="manual-item-form" class="manual-item-form">
+            <label class="visually-hidden" for="manual-item-name">Nome do item</label>
+            <input id="manual-item-name" name="name" type="text" maxlength="160" placeholder="Nome do item" required />
+            <label class="visually-hidden" for="manual-item-quantity">Quantidade</label>
+            <input id="manual-item-quantity" name="quantity" type="number" min="0.001" step="any" value="1" required />
+            <label class="visually-hidden" for="manual-item-unit">Unidade</label>
+            <input id="manual-item-unit" name="unit" type="text" maxlength="20" placeholder="Un." value="un." required />
+            <label class="visually-hidden" for="manual-item-price">Preço unitário</label>
+            <input id="manual-item-price" name="unit-price" type="number" min="0" step="0.01" placeholder="Preço unitário (R$)" required />
+            <button type="submit">Adicionar item</button>
+          </form>
+          <p id="items-status" class="participant-status" role="status" aria-live="polite"></p>
+
+          <div class="table-wrapper">
+            <table class="consolidated-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Código</th>
+                  <th class="num">Qtd</th>
+                  <th>Un</th>
+                  <th class="num">Preço un.</th>
+                  <th class="num">Total</th>
+                  <th>Origem</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="combined-items"></tbody>
+              <tfoot id="combined-totals"></tfoot>
+            </table>
+          </div>
+        </section>
       </section>
 
       <footer class="page-footer">Feito para dividir a conta sem complicação.</footer>
