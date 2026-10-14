@@ -3,27 +3,58 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Você me paga</title>
+    <meta
+      name="description"
+      content="Leia sua nota fiscal e veja os itens da compra. A nota lida. A conta dividida."
+    />
+    <meta name="theme-color" content="#064e3b" />
+    <title>vc me paga — A nota lida. A conta dividida.</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main>
-      <h1>Você me paga</h1>
-      <p class="subtitle">Cole o link da nota fiscal (QR Code da NFC-e) para listar a compra.</p>
-
-      <form id="invoice-form">
-        <input
-          id="invoice-url"
-          type="url"
-          placeholder="https://dfe-portal.svrs.rs.gov.br/Dfe/QrCodeNFce?p=..."
-          required
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Dividir fica mais fácil</p>
+          <h1>vc me paga</h1>
+          <p class="tagline">A nota lida. A conta dividida.</p>
+          <p class="subtitle">
+            Cole o link da nota fiscal para conferir os itens da compra.
+          </p>
+        </div>
+        <img
+          class="brand-art"
+          src="images/logo.png"
+          alt="Logo vc me paga: conversa, nota fiscal e setas verdes"
+          width="2000"
+          height="3000"
         />
-        <button id="submit-btn" type="submit">Consultar</button>
-      </form>
+      </header>
 
-      <p id="status" role="status" hidden></p>
+      <section class="lookup-card" aria-labelledby="lookup-title">
+        <div class="section-heading">
+          <span class="step-number" aria-hidden="true">01</span>
+          <div>
+            <h2 id="lookup-title">Comece pela nota</h2>
+            <p class="section-description">Use o link do QR Code da NFC-e.</p>
+          </div>
+        </div>
 
-      <section id="result" hidden>
+        <form id="invoice-form">
+          <label class="visually-hidden" for="invoice-url">Link da nota fiscal</label>
+          <input
+            id="invoice-url"
+            type="url"
+            placeholder="https://... (link do QR Code da NFC-e)"
+            required
+          />
+          <button id="submit-btn" type="submit">Ler nota</button>
+        </form>
+
+        <p id="status" role="status" aria-live="polite" hidden></p>
+      </section>
+
+      <section id="result" class="result-card" aria-label="Dados da nota fiscal" hidden>
         <div id="invoice-info" class="info"></div>
         <div class="table-wrapper">
           <table>
@@ -43,6 +74,8 @@
         </div>
         <div id="payments"></div>
       </section>
+
+      <footer class="page-footer">Feito para dividir a conta sem complicação.</footer>
     </main>
 
     <script src="config.js"></script>
