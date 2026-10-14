@@ -7,4 +7,4 @@ const API_URLS = {
   prod: "https://invoice-searcher-api-ee52c609bc5d.herokuapp.com",
 };
 
-const API_BASE_URL = API_URLS[ENV];
+window.API_BASE_URL = API_URLS[ENV];

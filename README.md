@@ -8,7 +8,7 @@ os dados, itens e pagamentos identificados na nota.
 
 ## Identidade visual
 
-- Logo: [images/logo.jpg](images/logo.jpg), exibida inteira em proporção quadrada no cabeçalho.
+- Logo: [images/logo.png](images/logo.png), exibida inteira em proporção quadrada no cabeçalho.
 - Verde ação: `#22C55E` e `#10B981`, usado no botão principal e nos destaques.
 - Verdes de confiança: `#064E3B` e `#022C22`, usados no cabeçalho e em títulos.
 - Fundo neutro: `#F9FAFB`; cartões usam branco para manter leitura clara.
@@ -18,21 +18,30 @@ os dados, itens e pagamentos identificados na nota.
 ## Estado do produto
 
 Hoje, o fluxo consulta uma nota por URL e lista os dados retornados pela API.
-O gerenciamento de pagantes, a divisão de itens e a leitura de QR Code por câmera ainda não existem.
-Cobranças Pix também não estão implementadas.
+O cadastro, a edição e a remoção de pagantes já funcionam antes ou depois da consulta da nota.
+A lista continua editável; cálculo de valores e divisão de itens ainda não existem.
+Os pagantes ficam apenas na página atual e não persistem após recarregar.
+Leitura de QR Code por câmera e cobranças Pix também não estão implementadas.
 
 ## Próximos passos
 
-1. Permitir cadastrar, editar e remover pagantes em uma compra.
-2. Associar cada item comprado aos pagantes que o consumiram.
-3. Calcular e exibir o valor devido por pagante e por item, incluindo divisão compartilhada.
-4. Ler o QR Code da NFC-e diretamente pela câmera, além da consulta atual por link:
+1. Associar cada item comprado aos pagantes que o consumiram.
+2. Calcular e exibir o valor devido por pagante e por item, incluindo divisão compartilhada.
+3. Ler o QR Code da NFC-e diretamente pela câmera, além da consulta atual por link:
    - Em desktop, usar a webcam disponível.
    - Em acesso mobile, abrir a câmera do celular.
-5. Apresentar resumo da divisão por pagante; integração com cobrança Pix pode vir depois.
+4. Apresentar resumo da divisão por pagante; integração com cobrança Pix pode vir depois.
 
 A leitura pela câmera depende de permissão do usuário e, em navegadores, de contexto seguro
 (HTTPS), exceto em endereços locais de desenvolvimento.
+
+## Testes
+
+Execute os testes do gerenciamento de pagantes com Node.js:
+
+```powershell
+node --test tests/participants.test.mjs
+```
 
 ## Ambientes
 
@@ -54,7 +63,9 @@ A API precisa liberar a origem do front-end via CORS (variável `CORS_ORIGINS`).
 ## Interface
 
 A interface se adapta a telas pequenas, mantém a tabela rolável horizontalmente e oferece foco
-visível para navegação por teclado. O logo fica em `images/logo.jpg`; preserve esse caminho ao
+visível para navegação por teclado. O cadastro de pagantes aparece antes da consulta da nota e
+permite adicionar, editar e remover nomes sem atribuí-los aos produtos. O logo fica em
+`images/logo.png`; preserve esse caminho ao
 publicar o front-end.
 
 ## Modo Caveman para assistentes de IA

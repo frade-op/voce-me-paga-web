@@ -1,3 +1,10 @@
+import { ParticipantRoster } from "./participants.mjs";
+
+const participantForm = document.getElementById("participant-form");
+const participantNameInput = document.getElementById("participant-name");
+const participantStatusEl = document.getElementById("participant-status");
+const participantsEmptyEl = document.getElementById("participants-empty");
+const participantsListEl = document.getElementById("participants-list");
 const form = document.getElementById("invoice-form");
 const urlInput = document.getElementById("invoice-url");
 const submitBtn = document.getElementById("submit-btn");
@@ -10,8 +17,139 @@ const paymentsEl = document.getElementById("payments");
 
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const quantity = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 });
+const participants = new ParticipantRoster();
+let editingParticipantId = null;
 
 const money = (value) => (value == null ? "-" : currency.format(Number(value)));
+
+function setParticipantStatus(message, isError = false) {
+  participantStatusEl.textContent = message;
+  participantStatusEl.classList.toggle("error", isError);
+}
+
+function createParticipantButton(label, action, participant) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "secondary-button";
+  button.dataset.action = action;
+  button.dataset.participantId = participant.id;
+  button.textContent = label;
+  button.setAttribute("aria-label", `${label} ${participant.name}`);
+  return button;
+}
+
+function renderParticipants(focusEditingInput = false) {
+  const rows = participants.list().map((participant) => {
+    const item = document.createElement("li");
+    item.className = "participant-row";
+
+    if (participant.id === editingParticipantId) {
+      const editForm = document.createElement("form");
+      editForm.className = "participant-edit-form";
+      editForm.dataset.participantId = participant.id;
+
+      const label = document.createElement("label");
+      label.className = "visually-hidden";
+      label.htmlFor = `edit-${participant.id}`;
+      label.textContent = `Editar nome de ${participant.name}`;
+
+      const input = document.createElement("input");
+      input.id = `edit-${participant.id}`;
+      input.name = "name";
+      input.type = "text";
+      input.maxLength = 80;
+      input.value = participant.name;
+      input.required = true;
+
+      const actions = document.createElement("div");
+      actions.className = "participant-actions";
+      const saveButton = document.createElement("button");
+      saveButton.type = "submit";
+      saveButton.textContent = "Salvar";
+      const cancelButton = createParticipantButton("Cancelar", "cancel", participant);
+      actions.append(saveButton, cancelButton);
+      editForm.append(label, input, actions);
+      item.append(editForm);
+      if (focusEditingInput) input.focus();
+      return item;
+    }
+
+    const name = document.createElement("span");
+    name.className = "participant-name";
+    name.textContent = participant.name;
+    const actions = document.createElement("div");
+    actions.className = "participant-actions";
+    actions.append(
+      createParticipantButton("Editar", "edit", participant),
+      createParticipantButton("Remover", "remove", participant)
+    );
+    item.append(name, actions);
+    return item;
+  });
+
+  participantsListEl.replaceChildren(...rows);
+  participantsEmptyEl.hidden = rows.length > 0;
+}
+
+participantForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  try {
+    const participant = participants.add(participantNameInput.value);
+    participantForm.reset();
+    setParticipantStatus(`${participant.name} adicionado.`);
+    renderParticipants();
+    participantNameInput.focus();
+  } catch (error) {
+    setParticipantStatus(error.message, true);
+    participantNameInput.focus();
+  }
+});
+
+participantsListEl.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button || !participantsListEl.contains(button)) return;
+
+  const { action, participantId } = button.dataset;
+  if (action === "edit") {
+    editingParticipantId = participantId;
+    setParticipantStatus("");
+    renderParticipants(true);
+    return;
+  }
+  if (action === "cancel") {
+    editingParticipantId = null;
+    setParticipantStatus("");
+    renderParticipants();
+    return;
+  }
+  if (action === "remove") {
+    try {
+      const participant = participants.remove(participantId);
+      editingParticipantId = null;
+      setParticipantStatus(`${participant.name} removido.`);
+      renderParticipants();
+    } catch (error) {
+      setParticipantStatus(error.message, true);
+    }
+  }
+});
+
+participantsListEl.addEventListener("submit", (event) => {
+  const editForm = event.target.closest(".participant-edit-form");
+  if (!editForm || !participantsListEl.contains(editForm)) return;
+
+  event.preventDefault();
+  const input = editForm.elements.namedItem("name");
+  try {
+    const participant = participants.rename(editForm.dataset.participantId, input.value);
+    editingParticipantId = null;
+    setParticipantStatus(`${participant.name} atualizado.`);
+    renderParticipants();
+  } catch (error) {
+    setParticipantStatus(error.message, true);
+    input.focus();
+  }
+});
 
 function setStatus(message, isError = false) {
   statusEl.hidden = !message;
@@ -103,7 +241,7 @@ form.addEventListener("submit", async (event) => {
   setStatus("Consultando nota fiscal...");
 
   try {
-    const response = await fetch(`${API_BASE_URL}/invoices/parse`, {
+    const response = await fetch(`${window.API_BASE_URL}/invoices/parse`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: urlInput.value.trim() }),

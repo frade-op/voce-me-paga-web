@@ -93,7 +93,8 @@ h1 {
 }
 
 .lookup-card,
-.result-card {
+.result-card,
+.participants-card {
   margin-top: 1.25rem;
   padding: clamp(1.25rem, 4vw, 2rem);
   border: 1px solid #e7eeea;
@@ -138,6 +139,82 @@ form {
   display: flex;
   gap: 0.75rem;
   margin-top: 1.5rem;
+}
+
+.participants-card form {
+  margin-top: 1.25rem;
+}
+
+.participant-status {
+  min-height: 1.25rem;
+  margin: 0.75rem 0 0;
+  color: var(--green-deep);
+  font-size: 0.9rem;
+}
+
+.participant-status.error {
+  color: #991b1b;
+}
+
+.empty-state {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.participants-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.participant-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #e7eeea;
+  border-radius: 12px;
+  background: #fbfdfc;
+}
+
+.participant-name {
+  min-width: 0;
+  color: var(--green-dark);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.participant-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.5rem;
+}
+
+.participant-actions button {
+  min-height: 40px;
+  padding: 0.55rem 0.8rem;
+}
+
+.secondary-button {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--green-deep);
+}
+
+.participant-edit-form {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.participant-edit-form input {
+  flex: 1;
 }
 
 input {
@@ -318,6 +395,15 @@ tfoot td {
 
   form {
     flex-direction: column;
+  }
+
+  .participant-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .participant-edit-form {
+    align-items: stretch;
   }
 
   button {

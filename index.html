@@ -31,11 +31,38 @@
         />
       </header>
 
+      <section class="participants-card" aria-labelledby="participants-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="participants-title">Quem vai participar?</h2>
+            <p class="section-description">
+              Cadastre, edite ou remova pagantes antes ou depois de consultar a nota.
+            </p>
+          </div>
+        </div>
+
+        <form id="participant-form">
+          <label class="visually-hidden" for="participant-name">Nome do pagante</label>
+          <input
+            id="participant-name"
+            name="name"
+            type="text"
+            maxlength="80"
+            autocomplete="off"
+            placeholder="Nome do pagante"
+            required
+          />
+          <button type="submit">Adicionar pagante</button>
+        </form>
+        <p id="participant-status" class="participant-status" role="status" aria-live="polite"></p>
+        <p id="participants-empty" class="empty-state">Nenhum pagante cadastrado.</p>
+        <ul id="participants-list" class="participants-list" aria-label="Pagantes cadastrados"></ul>
+      </section>
+
       <section class="lookup-card" aria-labelledby="lookup-title">
         <div class="section-heading">
-          <span class="step-number" aria-hidden="true">01</span>
           <div>
-            <h2 id="lookup-title">Comece pela nota</h2>
+            <h2 id="lookup-title">Consultar nota fiscal</h2>
             <p class="section-description">Use o link do QR Code da NFC-e.</p>
           </div>
         </div>
@@ -79,6 +106,6 @@
     </main>
 
     <script src="config.js"></script>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>
