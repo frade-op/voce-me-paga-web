@@ -2,56 +2,83 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { ParticipantRoster } from "../participants.mjs";
 
-test("adds trimmed participant names and returns independent records", () => {
+test("adds trimmed first and last names with initials and a random avatar color", () => {
   const roster = new ParticipantRoster();
 
-  const participant = roster.add("  Ana  ");
+  const participant = roster.add("  Ana  ", "  Silva  ");
   participant.name = "Changed outside the roster";
 
-  assert.deepEqual(roster.list(), [{ id: "participant-1", name: "Ana" }]);
+  assert.deepEqual(roster.list(), [
+    {
+      id: "participant-1",
+      firstName: "Ana",
+      lastName: "Silva",
+      name: "Ana Silva",
+      initials: "AS",
+      color: participant.color,
+    },
+  ]);
+  assert.match(participant.color, /^#[\da-f]{6}$/i);
 });
 
-test("rejects empty and duplicate names without changing the roster", () => {
+test("normalizes accented names and valid spaces, apostrophes, and hyphens", () => {
   const roster = new ParticipantRoster();
-  roster.add("Ana");
 
-  assert.throws(() => roster.add("  "), { message: "Informe o nome do pagante." });
-  assert.throws(() => roster.add(" ana "), {
+  assert.equal(roster.add("  Maria  Clara ", " D'Ávila-Souza ").name, "Maria Clara D'Ávila-Souza");
+  assert.equal(roster.list()[0].initials, "MD");
+});
+
+test("rejects invalid or missing name parts and duplicate full names", () => {
+  const roster = new ParticipantRoster();
+  roster.add("Ana", "Silva");
+
+  assert.throws(() => roster.add("", "Silva"), {
+    message: "Informe nome e sobrenome válidos, usando apenas letras.",
+  });
+  assert.throws(() => roster.add("Ana", ""), {
+    message: "Informe nome e sobrenome válidos, usando apenas letras.",
+  });
+  assert.throws(() => roster.add("Ana2", "Costa"), {
+    message: "Informe nome e sobrenome válidos, usando apenas letras.",
+  });
+  assert.throws(() => roster.add("Ana", "123"), {
+    message: "Informe nome e sobrenome válidos, usando apenas letras.",
+  });
+  assert.throws(() => roster.add(" ana ", " SILVA "), {
     message: "Já existe um pagante com esse nome.",
   });
-  assert.deepEqual(roster.list().map(({ name }) => name), ["Ana"]);
+  assert.deepEqual(roster.list().map(({ name }) => name), ["Ana Silva"]);
 });
 
-test("renames participant while allowing its current name", () => {
+test("renames participant and recalculates initials while retaining avatar color", () => {
   const roster = new ParticipantRoster();
-  const participant = roster.add("Ana");
+  const participant = roster.add("Ana", "Silva");
 
-  assert.deepEqual(roster.rename(participant.id, "  Ana  "), participant);
-  assert.deepEqual(roster.rename(participant.id, "Beatriz"), {
-    id: participant.id,
-    name: "Beatriz",
-  });
+  assert.deepEqual(roster.rename(participant.id, "  Ana ", " Silva  "), participant);
+  const renamed = roster.rename(participant.id, "Beatriz", "Oliveira");
+  assert.equal(renamed.name, "Beatriz Oliveira");
+  assert.equal(renamed.initials, "BO");
+  assert.equal(renamed.color, participant.color);
 });
 
-test("rejects duplicate renames and preserves the existing name", () => {
+test("rejects duplicate or invalid renames without changing participant", () => {
   const roster = new ParticipantRoster();
-  const first = roster.add("Ana");
-  const second = roster.add("Bia");
+  const first = roster.add("Ana", "Silva");
+  const second = roster.add("Bia", "Costa");
 
-  assert.throws(() => roster.rename(second.id, " ana "), {
+  assert.throws(() => roster.rename(second.id, " ana ", "silva"), {
     message: "Já existe um pagante com esse nome.",
   });
-  assert.deepEqual(roster.list().map(({ name }) => name), ["Ana", "Bia"]);
-  assert.throws(() => roster.rename(second.id, ""), {
-    message: "Informe o nome do pagante.",
+  assert.throws(() => roster.rename(second.id, "Bia2", "Costa"), {
+    message: "Informe nome e sobrenome válidos, usando apenas letras.",
   });
-  assert.equal(roster.list()[1].name, "Bia");
-  assert.equal(first.name, "Ana");
+  assert.deepEqual(roster.list().map(({ name }) => name), ["Ana Silva", "Bia Costa"]);
+  assert.equal(first.name, "Ana Silva");
 });
 
 test("removes participants and reports unknown ids", () => {
   const roster = new ParticipantRoster();
-  const participant = roster.add("Ana");
+  const participant = roster.add("Ana", "Silva");
 
   assert.deepEqual(roster.remove(participant.id), participant);
   assert.deepEqual(roster.list(), []);
@@ -63,7 +90,7 @@ test("removes participants and reports unknown ids", () => {
 test("does not share participants between purchase rosters", () => {
   const firstPurchase = new ParticipantRoster();
   const secondPurchase = new ParticipantRoster();
-  firstPurchase.add("Ana");
+  firstPurchase.add("Ana", "Silva");
 
   assert.deepEqual(secondPurchase.list(), []);
 });

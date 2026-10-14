@@ -2,7 +2,8 @@ import { InvoiceBook, sortItems } from "./invoices.mjs";
 import { ParticipantRoster } from "./participants.mjs";
 
 const participantForm = document.getElementById("participant-form");
-const participantNameInput = document.getElementById("participant-name");
+const participantFirstNameInput = document.getElementById("participant-first-name");
+const participantLastNameInput = document.getElementById("participant-last-name");
 const participantStatusEl = document.getElementById("participant-status");
 const participantsEmptyEl = document.getElementById("participants-empty");
 const participantsListEl = document.getElementById("participants-list");
@@ -85,16 +86,28 @@ function renderParticipants(focusEditingInput = false) {
 
       const label = document.createElement("label");
       label.className = "visually-hidden";
-      label.htmlFor = `edit-${participant.id}`;
+      label.htmlFor = `edit-first-name-${participant.id}`;
       label.textContent = `Editar nome de ${participant.name}`;
 
-      const input = document.createElement("input");
-      input.id = `edit-${participant.id}`;
-      input.name = "name";
-      input.type = "text";
-      input.maxLength = 80;
-      input.value = participant.name;
-      input.required = true;
+      const firstNameInput = document.createElement("input");
+      firstNameInput.id = `edit-first-name-${participant.id}`;
+      firstNameInput.name = "firstName";
+      firstNameInput.type = "text";
+      firstNameInput.maxLength = 50;
+      firstNameInput.placeholder = "Nome";
+      firstNameInput.autocomplete = "given-name";
+      firstNameInput.value = participant.firstName;
+      firstNameInput.required = true;
+
+      const lastNameInput = document.createElement("input");
+      lastNameInput.id = `edit-last-name-${participant.id}`;
+      lastNameInput.name = "lastName";
+      lastNameInput.type = "text";
+      lastNameInput.maxLength = 50;
+      lastNameInput.placeholder = "Sobrenome";
+      lastNameInput.autocomplete = "family-name";
+      lastNameInput.value = participant.lastName;
+      lastNameInput.required = true;
 
       const actions = document.createElement("div");
       actions.className = "participant-actions";
@@ -103,22 +116,34 @@ function renderParticipants(focusEditingInput = false) {
       saveButton.textContent = "Salvar";
       const cancelButton = createParticipantButton("Cancelar", "cancel", participant);
       actions.append(saveButton, cancelButton);
-      editForm.append(label, input, actions);
+      const lastNameLabel = document.createElement("label");
+      lastNameLabel.className = "visually-hidden";
+      lastNameLabel.htmlFor = lastNameInput.id;
+      lastNameLabel.textContent = `Editar sobrenome de ${participant.name}`;
+      editForm.append(label, firstNameInput, lastNameLabel, lastNameInput, actions);
       item.append(editForm);
-      if (focusEditingInput) input.focus();
+      if (focusEditingInput) firstNameInput.focus();
       return item;
     }
 
+    const identity = document.createElement("span");
+    identity.className = "participant-identity";
+    const avatar = document.createElement("span");
+    avatar.className = "participant-avatar";
+    avatar.textContent = participant.initials;
+    avatar.style.backgroundColor = participant.color;
+    avatar.setAttribute("aria-hidden", "true");
     const name = document.createElement("span");
     name.className = "participant-name";
     name.textContent = participant.name;
+    identity.append(avatar, name);
     const actions = document.createElement("div");
     actions.className = "participant-actions";
     actions.append(
       createParticipantButton("Editar", "edit", participant),
       createParticipantButton("Remover", "remove", participant)
     );
-    item.append(name, actions);
+    item.append(identity, actions);
     return item;
   });
 
@@ -129,14 +154,17 @@ function renderParticipants(focusEditingInput = false) {
 participantForm.addEventListener("submit", (event) => {
   event.preventDefault();
   try {
-    const participant = participants.add(participantNameInput.value);
+    const participant = participants.add(
+      participantFirstNameInput.value,
+      participantLastNameInput.value
+    );
     participantForm.reset();
     setParticipantStatus(`${participant.name} adicionado.`);
     renderParticipants();
-    participantNameInput.focus();
+    participantFirstNameInput.focus();
   } catch (error) {
     setParticipantStatus(error.message, true);
-    participantNameInput.focus();
+    participantFirstNameInput.focus();
   }
 });
 
@@ -174,15 +202,20 @@ participantsListEl.addEventListener("submit", (event) => {
   if (!editForm || !participantsListEl.contains(editForm)) return;
 
   event.preventDefault();
-  const input = editForm.elements.namedItem("name");
+  const firstNameInput = editForm.elements.namedItem("firstName");
+  const lastNameInput = editForm.elements.namedItem("lastName");
   try {
-    const participant = participants.rename(editForm.dataset.participantId, input.value);
+    const participant = participants.rename(
+      editForm.dataset.participantId,
+      firstNameInput.value,
+      lastNameInput.value
+    );
     editingParticipantId = null;
     setParticipantStatus(`${participant.name} atualizado.`);
     renderParticipants();
   } catch (error) {
     setParticipantStatus(error.message, true);
-    input.focus();
+    firstNameInput.focus();
   }
 });
 

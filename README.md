@@ -22,13 +22,16 @@ Cada nota nova começa recolhida; o usuário abre o painel para conferir seus it
 Uma tabela consolidada reúne itens das notas e itens adicionados manualmente.
 Edite ou remova itens na tabela consolidada; as notas importadas permanecem imutáveis como registro.
 Itens manuais pedem nome, quantidade, unidade e preço unitário; total é calculado automaticamente.
-Notas importadas e tabela consolidada aparecem em cartões separados.
+Tabela consolidada aparece antes das notas importadas, em cartões separados.
+As seções de pagantes e consulta da nota podem ser recolhidas ou expandidas e começam abertas.
 Na tabela consolidada, Item e Ações ficam sempre visíveis; Código, Qtd, Un, Preço un., Total
 e Origem podem ser mostrados ou ocultados pelo menu no canto superior direito.
 Por padrão, Item, Qtd, Un, Total e Ações aparecem. O formulário de itens manuais fica abaixo da
 tabela. Cabeçalhos das tabelas ordenam itens em ordem crescente ou decrescente.
-O cadastro, a edição e a remoção de pagantes já funcionam antes ou depois da consulta da nota.
-A lista continua editável; associação de itens aos pagantes e cálculo da divisão ainda não existem.
+O cadastro exige nome e sobrenome compostos apenas por letras; espaços, hífens e apóstrofos internos
+são aceitos. Cada pagante recebe avatar circular com iniciais e cor aleatória. A edição atualiza
+iniciais e mantém a cor do avatar. A lista continua editável; associação de itens aos pagantes e
+cálculo da divisão ainda não existem.
 Os pagantes ficam apenas na página atual e não persistem após recarregar.
 Leitura de QR Code por câmera e cobranças Pix também não estão implementadas.
 
@@ -72,12 +75,15 @@ A API precisa liberar a origem do front-end via CORS (variável `CORS_ORIGINS`).
 ## Interface
 
 A interface se adapta a telas pequenas, mantém a tabela rolável horizontalmente e oferece foco
-visível para navegação por teclado. O cadastro de pagantes aparece antes da consulta da nota e
-permite adicionar, editar e remover nomes sem atribuí-los aos produtos. Importe mais de uma nota;
-cada nota fica em um painel expansível, acima da tabela consolidada, e começa recolhida após
+visível para navegação por teclado. As seções de pagantes e consulta da nota podem ser recolhidas;
+ambas começam expandidas. O cadastro de pagantes aparece antes da consulta da nota e permite
+adicionar, editar e remover nomes sem atribuí-los aos produtos. Importe mais de uma nota;
+cada nota fica em um painel expansível, abaixo da tabela consolidada, e começa recolhida após
 importação. Os itens dentro de cada nota são somente leitura e não podem ser editados ou removidos.
 Edite ou remova itens apenas na tabela consolidada; os dados originais da nota permanecem intactos.
-Pagantes podem ser editados e removidos pelos ícones amarelo e vermelho, com tooltip.
+Pagantes podem ser editados e removidos pelos ícones amarelo e vermelho, com tooltip. Nome e
+sobrenome são validados no cadastro e na edição; avatares coloridos identificam pagantes para
+associação futura aos itens.
 Configure colunas da tabela consolidada pelo menu no canto superior direito;
 Item e Ações permanecem visíveis. O formulário de item manual fica abaixo da tabela. Ordene
 qualquer tabela clicando nos cabeçalhos. Os ícones de edição e remoção têm tooltips. A coluna de

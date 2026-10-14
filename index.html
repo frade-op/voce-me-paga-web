@@ -31,69 +31,74 @@
         />
       </header>
 
-      <section class="participants-card" aria-labelledby="participants-title">
-        <div class="section-heading">
+      <details class="participants-card collapsible-card" open aria-labelledby="participants-title">
+        <summary class="section-heading collapsible-heading">
           <div>
             <h2 id="participants-title">Quem vai participar?</h2>
             <p class="section-description">
               Cadastre, edite ou remova pagantes antes ou depois de consultar a nota.
             </p>
           </div>
+        </summary>
+
+        <div class="collapsible-content">
+          <form id="participant-form">
+            <label class="visually-hidden" for="participant-first-name">Nome</label>
+            <input
+              id="participant-first-name"
+              name="firstName"
+              type="text"
+              maxlength="50"
+              autocomplete="off"
+              placeholder="Nome"
+              aria-label="Nome"
+              required
+            />
+            <label class="visually-hidden" for="participant-last-name">Sobrenome</label>
+            <input
+              id="participant-last-name"
+              name="lastName"
+              type="text"
+              maxlength="50"
+              autocomplete="off"
+              placeholder="Sobrenome"
+              aria-label="Sobrenome"
+              required
+            />
+            <button type="submit">Adicionar pagante</button>
+          </form>
+          <p id="participant-status" class="participant-status" role="status" aria-live="polite"></p>
+          <p id="participants-empty" class="empty-state">Nenhum pagante cadastrado.</p>
+          <ul id="participants-list" class="participants-list" aria-label="Pagantes cadastrados"></ul>
         </div>
+      </details>
 
-        <form id="participant-form">
-          <label class="visually-hidden" for="participant-name">Nome do pagante</label>
-          <input
-            id="participant-name"
-            name="name"
-            type="text"
-            maxlength="80"
-            autocomplete="off"
-            placeholder="Nome do pagante"
-            required
-          />
-          <button type="submit">Adicionar pagante</button>
-        </form>
-        <p id="participant-status" class="participant-status" role="status" aria-live="polite"></p>
-        <p id="participants-empty" class="empty-state">Nenhum pagante cadastrado.</p>
-        <ul id="participants-list" class="participants-list" aria-label="Pagantes cadastrados"></ul>
-      </section>
-
-      <section class="lookup-card" aria-labelledby="lookup-title">
-        <div class="section-heading">
+      <details class="lookup-card collapsible-card" open aria-labelledby="lookup-title">
+        <summary class="section-heading collapsible-heading">
           <div>
             <h2 id="lookup-title">Consultar nota fiscal</h2>
             <p class="section-description">Adicione os links das notas que fazem parte da compra.</p>
           </div>
+        </summary>
+
+        <div class="collapsible-content">
+          <form id="invoice-form">
+            <label class="visually-hidden" for="invoice-url">Link da nota fiscal</label>
+            <input
+              id="invoice-url"
+              type="url"
+              placeholder="Link do QR Code da NFC-e"
+              required
+            />
+            <button id="submit-btn" type="submit">Adicionar nota</button>
+          </form>
+
+          <p id="status" role="status" aria-live="polite" hidden></p>
         </div>
-
-        <form id="invoice-form">
-          <label class="visually-hidden" for="invoice-url">Link da nota fiscal</label>
-          <input
-            id="invoice-url"
-            type="url"
-            placeholder="Link do QR Code da NFC-e"
-            required
-          />
-          <button id="submit-btn" type="submit">Adicionar nota</button>
-        </form>
-
-        <p id="status" role="status" aria-live="polite" hidden></p>
-      </section>
-
-      <section id="result" class="result-card invoices-card" aria-label="Notas da compra">
-        <div class="section-heading">
-          <div>
-            <h2>Notas da compra</h2>
-            <p class="section-description">Abra cada nota para conferir os itens importados.</p>
-          </div>
-        </div>
-        <p id="invoices-empty" class="empty-state">As notas adicionadas aparecerão aqui.</p>
-        <div id="invoices-list" class="invoices-list"></div>
-      </section>
+      </details>
 
       <section class="result-card combined-items" aria-labelledby="combined-items-title">
-        <div class="combined-heading">
+        <div class="section-heading combined-heading">
           <div>
             <h2 id="combined-items-title">Todos os itens</h2>
             <p class="section-description">Itens das notas e itens adicionados manualmente.</p>
@@ -132,6 +137,17 @@
           <input id="manual-item-price" name="unit-price" type="number" min="0" step="0.01" placeholder="Preço unitário (R$)" required />
           <button type="submit">Adicionar item</button>
         </form>
+      </section>
+
+      <section id="result" class="result-card invoices-card" aria-label="Notas da compra">
+        <div class="section-heading">
+          <div>
+            <h2>Notas da compra</h2>
+            <p class="section-description">Abra cada nota para conferir os itens importados.</p>
+          </div>
+        </div>
+        <p id="invoices-empty" class="empty-state">As notas adicionadas aparecerão aqui.</p>
+        <div id="invoices-list" class="invoices-list"></div>
       </section>
 
       <dialog id="item-edit-dialog" aria-labelledby="item-edit-title">
