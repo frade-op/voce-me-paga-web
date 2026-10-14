@@ -83,6 +83,12 @@
 
         <div class="collapsible-content">
           <form id="invoice-form">
+            <button id="scan-qr-btn" class="qr-scan-button" type="button" title="Ler QR Code" aria-label="Ler QR Code">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+                <circle cx="12" cy="12.5" r="3.5" />
+              </svg>
+            </button>
             <label class="visually-hidden" for="invoice-url">Link da nota fiscal</label>
             <input
               id="invoice-url"
@@ -188,10 +194,27 @@
         </form>
       </dialog>
 
+      <dialog id="qr-dialog" aria-labelledby="qr-title">
+        <div id="qr-panel">
+          <h2 id="qr-title">Ler QR Code da nota</h2>
+          <p class="section-description">Aponte a câmera para o QR Code da NFC-e.</p>
+          <div class="qr-viewport">
+            <video id="qr-video" playsinline muted></video>
+          </div>
+          <p id="qr-status" class="participant-status" role="status" aria-live="polite"></p>
+          <input id="qr-photo-input" type="file" accept="image/*" capture="environment" hidden />
+          <div class="dialog-actions">
+            <button id="qr-photo-btn" class="secondary-button" type="button">Tirar foto</button>
+            <button id="qr-close-btn" class="secondary-button" type="button">Fechar</button>
+          </div>
+        </div>
+      </dialog>
+
       <footer class="page-footer">Feito para dividir a conta sem complicação.</footer>
     </main>
 
     <script src="config.js"></script>
+    <script src="vendor/jsQR.js"></script>
     <script type="module" src="app.js"></script>
   </body>
 </html>

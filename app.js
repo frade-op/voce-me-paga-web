@@ -1,6 +1,7 @@
 import { InvoiceBook, sortItems } from "./invoices.mjs";
 import { ParticipantRoster } from "./participants.mjs";
 import { ItemShares } from "./shares.mjs";
+import { extractInvoiceUrl, isCameraContextSecure } from "./qr.mjs";
 
 const participantForm = document.getElementById("participant-form");
 const participantFirstNameInput = document.getElementById("participant-first-name");
@@ -373,12 +374,26 @@ function renderItemTable(
       action.className = "actions-column";
       const actions = document.createElement("div");
       actions.className = "action-buttons";
+      actions.id = `actions-${item.id}`;
       actions.append(
         createItemActionButton("assign", item),
         createItemActionButton("edit", item),
         createItemActionButton("remove", item)
       );
-      action.append(actions);
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "icon-button actions-toggle";
+      toggle.dataset.actionsToggle = "";
+      toggle.title = `Ações de ${item.name}`;
+      toggle.setAttribute("aria-label", `Ações de ${item.name}`);
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-controls", actions.id);
+      toggle.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>';
+      const menu = document.createElement("div");
+      menu.className = "action-menu";
+      menu.append(toggle, actions);
+      action.append(menu);
       row.append(action);
     }
     return row;
@@ -616,7 +631,10 @@ form.addEventListener("submit", async (event) => {
     renderParticipants();
     form.reset();
     const itemLabel = invoice.products.length === 1 ? "item" : "itens";
-    setStatus(`Nota ${invoice.number} adicionada com ${invoice.products.length} ${itemLabel}.`);
+    const noParticipantsNotice = participants.list().length
+      ? ""
+      : " Lembre-se de adicionar pagantes caso queira dividir os valores em mais de uma pessoa.";
+    setStatus(`Nota ${invoice.number} adicionada com ${invoice.products.length} ${itemLabel}.${noParticipantsNotice}`);
   } catch (error) {
     setStatus(
       error instanceof TypeError ? "Não foi possível conectar ao serviço." : error.message,
@@ -624,6 +642,135 @@ form.addEventListener("submit", async (event) => {
     );
   } finally {
     submitBtn.disabled = false;
+  }
+});
+
+const qrDialog = document.getElementById("qr-dialog");
+const qrVideo = document.getElementById("qr-video");
+const qrStatusEl = document.getElementById("qr-status");
+const qrPhotoInput = document.getElementById("qr-photo-input");
+let qrStream = null;
+let qrScanning = false;
+let qrDetector = null;
+
+function setQrStatus(message, isError = false) {
+  qrStatusEl.textContent = message;
+  qrStatusEl.classList.toggle("error", isError);
+}
+
+function stopQrCamera() {
+  qrScanning = false;
+  qrStream?.getTracks().forEach((track) => track.stop());
+  qrStream = null;
+  qrVideo.srcObject = null;
+}
+
+function closeQrDialog() {
+  stopQrCamera();
+  if (qrDialog.open) qrDialog.close();
+}
+
+function applyQrResult(text) {
+  const url = extractInvoiceUrl(text);
+  if (!url) {
+    setQrStatus("O QR Code lido não contém um link de nota fiscal.", true);
+    return false;
+  }
+  urlInput.value = url;
+  closeQrDialog();
+  setStatus("QR Code lido. Confira o link e clique em Adicionar nota.");
+  submitBtn.focus();
+  return true;
+}
+
+function decodeQrFromSource(source, width, height) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  context.drawImage(source, 0, 0, width, height);
+  const imageData = context.getImageData(0, 0, width, height);
+  return window.jsQR?.(imageData.data, width, height)?.data ?? null;
+}
+
+async function detectQr(source, width, height) {
+  if (qrDetector) {
+    const [code] = await qrDetector.detect(source);
+    if (code) return code.rawValue;
+  }
+  return decodeQrFromSource(source, width, height);
+}
+
+async function scanQrLoop() {
+  while (qrScanning) {
+    if (qrVideo.readyState >= 2 && qrVideo.videoWidth > 0) {
+      try {
+        const text = await detectQr(qrVideo, qrVideo.videoWidth, qrVideo.videoHeight);
+        if (text && applyQrResult(text)) return;
+      } catch {
+        // Quadro ilegível; tenta o próximo.
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+}
+
+async function startQrCamera() {
+  if (!isCameraContextSecure() || !navigator.mediaDevices?.getUserMedia) {
+    setQrStatus("Câmera ao vivo indisponível aqui. Use Tirar foto.", true);
+    return;
+  }
+  try {
+    qrStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } },
+      audio: false,
+    });
+    qrVideo.srcObject = qrStream;
+    await qrVideo.play();
+    setQrStatus("Procurando QR Code...");
+    qrScanning = true;
+    scanQrLoop();
+  } catch (error) {
+    stopQrCamera();
+    setQrStatus(
+      error?.name === "NotAllowedError"
+        ? "Permissão da câmera negada. Libere o acesso ou use Tirar foto."
+        : "Não foi possível abrir a câmera. Use Tirar foto.",
+      true
+    );
+  }
+}
+
+document.getElementById("scan-qr-btn").addEventListener("click", () => {
+  if ("BarcodeDetector" in window && !qrDetector) {
+    qrDetector = new window.BarcodeDetector({ formats: ["qr_code"] });
+  }
+  setQrStatus("");
+  qrDialog.showModal();
+  startQrCamera();
+});
+
+document.getElementById("qr-close-btn").addEventListener("click", closeQrDialog);
+qrDialog.addEventListener("close", stopQrCamera);
+
+document.getElementById("qr-photo-btn").addEventListener("click", () => qrPhotoInput.click());
+
+qrPhotoInput.addEventListener("change", async () => {
+  const [file] = qrPhotoInput.files;
+  qrPhotoInput.value = "";
+  if (!file) return;
+  setQrStatus("Lendo foto...");
+  try {
+    const bitmap = await createImageBitmap(file);
+    const text = await detectQr(bitmap, bitmap.width, bitmap.height);
+    bitmap.close?.();
+    if (!text) {
+      setQrStatus("Nenhum QR Code encontrado na foto. Tente de novo mais perto.", true);
+      return;
+    }
+    applyQrResult(text);
+  } catch {
+    setQrStatus("Não foi possível ler a foto.", true);
   }
 });
 
@@ -846,7 +993,20 @@ document.getElementById("cancel-item-edit").addEventListener("click", () => item
 for (const toggle of columnToggles) {
   toggle.addEventListener("change", updateColumnVisibility);
 }
+combinedItemsEl.addEventListener("click", (event) => {
+  const toggle = event.target.closest("button[data-actions-toggle]");
+  if (!toggle) return;
+  const menu = toggle.closest(".action-menu");
+  const open = !menu.classList.contains("open");
+  menu.classList.toggle("open", open);
+  toggle.setAttribute("aria-expanded", String(open));
+});
 combinedItemsEl.addEventListener("click", handleItemAction);
 invoicesListEl.addEventListener("click", sortTable);
 document.querySelector(".consolidated-table").addEventListener("click", sortTable);
+if (window.matchMedia("(max-width: 600px)").matches) {
+  for (const toggle of columnToggles) {
+    toggle.checked = toggle.dataset.column === "total_price";
+  }
+}
 renderInvoiceBook();

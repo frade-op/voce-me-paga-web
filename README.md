@@ -26,7 +26,9 @@ Tabela consolidada aparece antes das notas importadas, em cartões separados.
 As seções de pagantes e consulta da nota podem ser recolhidas ou expandidas e começam abertas.
 Na tabela consolidada, Item e Ações ficam sempre visíveis; Código, Qtd, Un, Preço un., Total
 e Origem podem ser mostrados ou ocultados pelo menu no canto superior direito.
-Por padrão, Item, Qtd, Un, Total e Ações aparecem. O formulário de itens manuais fica abaixo da
+Por padrão, Item, Qtd, Un, Total e Ações aparecem; em tela de celular (até 600px) o carregamento
+mostra apenas Item, Total e Ações, e a coluna Ações vira um único ícone que expande as opções
+de cada item. O formulário de itens manuais fica abaixo da
 tabela. Cabeçalhos das tabelas ordenam itens em ordem crescente ou decrescente.
 O cadastro exige nome e sobrenome compostos apenas por letras; espaços, hífens e apóstrofos internos
 são aceitos. Cada pagante recebe avatar circular com iniciais e cor aleatória. A edição atualiza
@@ -39,24 +41,28 @@ Na tabela consolidada, avatares circulares sobrepostos mostram dois pagantes por
 mais pagantes exibem os dois primeiros avatares e um indicador com a quantidade adicional.
 Passe o mouse ou foque no indicador para consultar todos os nomes atribuídos.
 Os pagantes ficam apenas na página atual e não persistem após recarregar.
-Leitura de QR Code por câmera e cobranças Pix também não estão implementadas.
+Se uma nota for importada sem pagantes cadastrados, a mensagem de status lembra o usuário de
+adicionar pagantes para dividir os valores.
+O botão "Ler QR Code" do cartão de consulta abre a câmera (traseira em celulares, webcam em desktop),
+detecta o QR Code da NFC-e e preenche o campo de link; o usuário confere e clica em "Adicionar nota".
+"Tirar foto" abre a câmera nativa do celular (ou seletor de imagem) como alternativa quando a câmera
+ao vivo não está disponível. Usa `BarcodeDetector` quando existe e a biblioteca
+[jsQR](https://github.com/cozmo/jsQR) (Apache-2.0, em `vendor/jsQR.js`) como alternativa.
+Cobranças Pix ainda não estão implementadas.
 
 ## Próximos passos
 
-1. Ler o QR Code da NFC-e diretamente pela câmera, além da consulta atual por link:
-   - Em desktop, usar a webcam disponível.
-   - Em acesso mobile, abrir a câmera do celular.
-2. Apresentar resumo da divisão por pagante; integração com cobrança Pix pode vir depois.
+1. Apresentar resumo da divisão por pagante; integração com cobrança Pix pode vir depois.
 
-A leitura pela câmera depende de permissão do usuário e, em navegadores, de contexto seguro
-(HTTPS), exceto em endereços locais de desenvolvimento.
+A câmera ao vivo depende de permissão do usuário e de contexto seguro (HTTPS), exceto em
+`localhost`/`127.0.0.1`. Em celulares na rede local via HTTP, use "Tirar foto".
 
 ## Testes
 
-Execute os testes de pagantes e itens com Node.js:
+Execute os testes de pagantes, itens e QR Code com Node.js:
 
 ```powershell
-node --test tests/participants.test.mjs tests/invoices.test.mjs tests/shares.test.mjs
+node --test tests/participants.test.mjs tests/invoices.test.mjs tests/shares.test.mjs tests/qr.test.mjs
 ```
 
 ## Ambientes
