@@ -1,5 +1,6 @@
 import { InvoiceBook, sortItems } from "./invoices.mjs";
 import { ParticipantRoster } from "./participants.mjs";
+import { ItemShares } from "./shares.mjs";
 
 const participantForm = document.getElementById("participant-form");
 const participantFirstNameInput = document.getElementById("participant-first-name");
@@ -19,6 +20,12 @@ const manualItemForm = document.getElementById("manual-item-form");
 const itemsStatusEl = document.getElementById("items-status");
 const itemEditDialog = document.getElementById("item-edit-dialog");
 const itemEditForm = document.getElementById("item-edit-form");
+const assignmentDialog = document.getElementById("assignment-dialog");
+const assignmentForm = document.getElementById("assignment-form");
+const assignmentTitle = document.getElementById("assignment-title");
+const assignmentDescription = document.getElementById("assignment-description");
+const assignmentOptions = document.getElementById("assignment-options");
+const assignmentError = document.getElementById("assignment-error");
 const columnToggles = [...document.querySelectorAll(".column-visibility input[data-column]")];
 const sortStates = new Map();
 
@@ -26,7 +33,9 @@ const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "
 const quantity = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 });
 const participants = new ParticipantRoster();
 const invoiceBook = new InvoiceBook();
+const shares = new ItemShares();
 let editingParticipantId = null;
+let assignmentTarget = null;
 
 const money = (value) => (value == null ? "-" : currency.format(Number(value)));
 
@@ -57,7 +66,9 @@ function createParticipantButton(label, action, participant) {
       ? "icon-button edit-icon"
       : action === "remove"
         ? "icon-button delete-icon"
-        : "secondary-button";
+        : action === "assign-items"
+          ? "participant-items-button"
+          : "secondary-button";
   button.dataset.action = action;
   button.dataset.participantId = participant.id;
   button.title = `${label} ${participant.name}`;
@@ -75,7 +86,9 @@ function createParticipantButton(label, action, participant) {
 }
 
 function renderParticipants(focusEditingInput = false) {
-  const rows = participants.list().map((participant) => {
+  const participantList = participants.list();
+  const totals = shares.calculateTotals(invoiceBook.listItems(), participantList);
+  const rows = participantList.map((participant) => {
     const item = document.createElement("li");
     item.className = "participant-row";
 
@@ -137,13 +150,20 @@ function renderParticipants(focusEditingInput = false) {
     name.className = "participant-name";
     name.textContent = participant.name;
     identity.append(avatar, name);
+    const summary = document.createElement("div");
+    summary.className = "participant-summary";
+    const due = document.createElement("span");
+    due.className = "participant-due";
+    due.textContent = `Deve ${money(totals.get(participant.id) / 100)}`;
+    summary.append(identity, due);
     const actions = document.createElement("div");
     actions.className = "participant-actions";
     actions.append(
+      createParticipantButton("Editar itens", "assign-items", participant),
       createParticipantButton("Editar", "edit", participant),
       createParticipantButton("Remover", "remove", participant)
     );
-    item.append(identity, actions);
+    item.append(summary, actions);
     return item;
   });
 
@@ -161,6 +181,7 @@ participantForm.addEventListener("submit", (event) => {
     participantForm.reset();
     setParticipantStatus(`${participant.name} adicionado.`);
     renderParticipants();
+    renderInvoiceBook();
     participantFirstNameInput.focus();
   } catch (error) {
     setParticipantStatus(error.message, true);
@@ -185,12 +206,22 @@ participantsListEl.addEventListener("click", (event) => {
     renderParticipants();
     return;
   }
+  if (action === "assign-items") {
+    try {
+      openAssignmentDialog({ type: "participant", participantId });
+    } catch (error) {
+      setParticipantStatus(error.message, true);
+    }
+    return;
+  }
   if (action === "remove") {
     try {
       const participant = participants.remove(participantId);
+      shares.removeParticipant(participantId);
       editingParticipantId = null;
       setParticipantStatus(`${participant.name} removido.`);
       renderParticipants();
+      renderInvoiceBook();
     } catch (error) {
       setParticipantStatus(error.message, true);
     }
@@ -213,6 +244,7 @@ participantsListEl.addEventListener("submit", (event) => {
     editingParticipantId = null;
     setParticipantStatus(`${participant.name} atualizado.`);
     renderParticipants();
+    renderInvoiceBook();
   } catch (error) {
     setParticipantStatus(error.message, true);
     firstNameInput.focus();
@@ -230,6 +262,47 @@ function cell(text, className) {
   td.textContent = text ?? "-";
   if (className) td.className = className;
   return td;
+}
+
+function createItemShareStack(item) {
+  const participantsById = new Map(participants.list().map((participant) => [participant.id, participant]));
+  const assigned = shares
+    .listParticipantIds(item.id)
+    .map((id) => participantsById.get(id))
+    .filter(Boolean);
+  const stack = document.createElement("span");
+  stack.className = "item-share-stack";
+  const names = assigned.map(({ name }) => name);
+  stack.title = names.length ? `Pagantes: ${names.join(", ")}` : "Nenhum pagante atribuído";
+  stack.setAttribute(
+    "aria-label",
+    names.length ? `Pagantes: ${names.join(", ")}` : "Nenhum pagante atribuído"
+  );
+
+  const visibleParticipants = assigned.slice(0, 2);
+  for (const participant of visibleParticipants) {
+    const coin = document.createElement("span");
+    coin.className = "item-share-avatar";
+    coin.textContent = participant.initials;
+    coin.style.backgroundColor = participant.color;
+    coin.title = participant.name;
+    coin.setAttribute("aria-hidden", "true");
+    stack.append(coin);
+  }
+  if (assigned.length > 2) {
+    const count = document.createElement("span");
+    count.className = "item-share-count";
+    count.textContent = `+${assigned.length - 2}`;
+    count.setAttribute("aria-hidden", "true");
+    stack.append(count);
+  } else if (!assigned.length) {
+    const empty = document.createElement("span");
+    empty.className = "item-share-empty";
+    empty.textContent = "—";
+    empty.setAttribute("aria-hidden", "true");
+    stack.append(empty);
+  }
+  return stack;
 }
 
 function renderInfo(invoice, container) {
@@ -272,7 +345,7 @@ function renderItemTable(
   const rows = sortedItems.map((item) => {
     const row = document.createElement("tr");
     const columns = [
-      ["name", item.name, ""],
+      ["name", item.name, "item-name-cell"],
       ["code", item.code || "-", ""],
       ["quantity", quantity.format(item.quantity), "num"],
       ["unit", item.unit || "-", ""],
@@ -284,6 +357,15 @@ function renderItemTable(
       const tableCell = cell(value, className);
       tableCell.dataset.column = column;
       tableCell.hidden = !includeSource && !visibleColumns.includes(column);
+      if (column === "name" && allowRemoval) {
+        const content = document.createElement("span");
+        content.className = "item-name-content";
+        const itemName = document.createElement("span");
+        itemName.className = "item-name";
+        itemName.textContent = value;
+        content.append(itemName, createItemShareStack(item));
+        tableCell.replaceChildren(content);
+      }
       row.append(tableCell);
     }
     if (allowRemoval) {
@@ -291,7 +373,11 @@ function renderItemTable(
       action.className = "actions-column";
       const actions = document.createElement("div");
       actions.className = "action-buttons";
-      actions.append(createItemActionButton("edit", item), createItemActionButton("remove", item));
+      actions.append(
+        createItemActionButton("assign", item),
+        createItemActionButton("edit", item),
+        createItemActionButton("remove", item)
+      );
       action.append(actions);
       row.append(action);
     }
@@ -336,16 +422,20 @@ function renderItemTable(
 function createItemActionButton(action, item) {
   const button = document.createElement("button");
   const isEdit = action === "edit";
-  const label = isEdit ? "Editar" : "Remover";
+  const isAssign = action === "assign";
+  const label = isEdit ? "Editar" : isAssign ? "Editar pagantes de" : "Remover";
   button.type = "button";
-  button.className = `icon-button ${isEdit ? "edit-icon" : "delete-icon"}`;
+  const iconClass = isEdit ? "edit-icon" : isAssign ? "assign-icon" : "delete-icon";
+  button.className = `icon-button ${iconClass}`;
   button.dataset.itemAction = action;
   button.dataset.itemId = item.id;
   button.title = `${label} ${item.name}`;
   button.setAttribute("aria-label", `${label} ${item.name}`);
   button.innerHTML = isEdit
     ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>'
-    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>';
+    : isAssign
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>';
   return button;
 }
 
@@ -519,7 +609,11 @@ form.addEventListener("submit", async (event) => {
       return;
     }
     const invoice = invoiceBook.addInvoice(body);
+    for (const item of invoice.products) {
+      shares.addItem(item.id, participants.list().map(({ id }) => id));
+    }
     renderInvoiceBook();
+    renderParticipants();
     form.reset();
     const itemLabel = invoice.products.length === 1 ? "item" : "itens";
     setStatus(`Nota ${invoice.number} adicionada com ${invoice.products.length} ${itemLabel}.`);
@@ -543,8 +637,10 @@ manualItemForm.addEventListener("submit", (event) => {
       unit: formData.get("unit"),
       unit_price: formData.get("unit-price"),
     });
+    shares.addItem(item.id, participants.list().map(({ id }) => id));
     manualItemForm.reset();
     renderInvoiceBook();
+    renderParticipants();
     itemsStatusEl.textContent = `${item.name} adicionado à compra.`;
     itemsStatusEl.classList.remove("error");
     manualItemForm.elements.namedItem("name").focus();
@@ -554,9 +650,148 @@ manualItemForm.addEventListener("submit", (event) => {
   }
 });
 
+function openAssignmentDialog(target) {
+  const participantList = participants.list();
+  const items = invoiceBook.listItems();
+  assignmentTarget = target;
+  assignmentError.hidden = true;
+  assignmentError.textContent = "";
+  assignmentOptions.replaceChildren();
+
+  let options;
+  let selectedIds;
+  if (target.type === "item") {
+    const item = items.find(({ id }) => id === target.itemId);
+    if (!item) throw new Error("Item não encontrado.");
+    assignmentTitle.textContent = "Quem vai pagar este item?";
+    assignmentDescription.textContent = `${item.name} · ${money(item.total_price)}`;
+    options = participantList.map((participant) => ({
+      id: participant.id,
+      label: participant.name,
+      color: participant.color,
+      initials: participant.initials,
+    }));
+    selectedIds = new Set(shares.listParticipantIds(item.id));
+  } else {
+    const participant = participantList.find(({ id }) => id === target.participantId);
+    if (!participant) throw new Error("Pagante não encontrado.");
+    assignmentTitle.textContent = "Editar itens do pagante";
+    assignmentDescription.textContent = `Selecione os itens que ${participant.name} pagará.`;
+    options = items.map((item) => ({
+      id: item.id,
+      label: item.name,
+      detail: money(item.total_price),
+    }));
+    selectedIds = new Set(
+      items
+        .filter((item) => shares.listParticipantIds(item.id).includes(participant.id))
+        .map(({ id }) => id)
+    );
+  }
+
+  const rows = options.map((option) => {
+    const label = document.createElement("label");
+    label.className = "assignment-option";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.name = "selection";
+    checkbox.value = option.id;
+    checkbox.checked = selectedIds.has(option.id);
+
+    if (option.color) {
+      const avatar = document.createElement("span");
+      avatar.className = "participant-avatar";
+      avatar.style.backgroundColor = option.color;
+      avatar.textContent = option.initials;
+      avatar.setAttribute("aria-hidden", "true");
+      label.append(checkbox, avatar);
+    } else {
+      label.append(checkbox);
+    }
+    const name = document.createElement("span");
+    name.className = "assignment-option-name";
+    name.textContent = option.label;
+    label.append(name);
+    if (option.detail) {
+      const detail = document.createElement("span");
+      detail.className = "assignment-option-detail";
+      detail.textContent = option.detail;
+      label.append(detail);
+    }
+    return label;
+  });
+  if (!rows.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent =
+      target.type === "item"
+        ? "Cadastre pagantes antes de atribuir este item."
+        : "Adicione itens à compra para configurar o pagamento.";
+    rows.push(empty);
+  }
+  assignmentOptions.replaceChildren(...rows);
+  assignmentDialog.showModal();
+  assignmentOptions.querySelector("input")?.focus();
+}
+
+assignmentForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (!assignmentTarget) return;
+  const selectedIds = [
+    ...assignmentOptions.querySelectorAll('input[name="selection"]:checked'),
+  ].map(({ value }) => value);
+  try {
+    if (assignmentTarget.type === "item") {
+      shares.setItemParticipants(
+        assignmentTarget.itemId,
+        selectedIds,
+        participants.list().map(({ id }) => id)
+      );
+      itemsStatusEl.textContent = "Pagantes do item atualizados.";
+    } else {
+      const participant = participants
+        .list()
+        .find(({ id }) => id === assignmentTarget.participantId);
+      shares.setParticipantItems(
+        assignmentTarget.participantId,
+        selectedIds,
+        participants.list().map(({ id }) => id)
+      );
+      itemsStatusEl.textContent = `Itens de ${participant.name} atualizados.`;
+    }
+    itemsStatusEl.classList.remove("error");
+    assignmentDialog.close();
+    renderInvoiceBook();
+    renderParticipants();
+  } catch (error) {
+    assignmentError.hidden = false;
+    assignmentError.textContent = error.message;
+    itemsStatusEl.textContent = error.message;
+    itemsStatusEl.classList.add("error");
+  }
+});
+
+assignmentDialog.addEventListener("close", () => {
+  assignmentTarget = null;
+});
+
+document.getElementById("cancel-assignment").addEventListener("click", () => {
+  assignmentDialog.close();
+});
+
 function handleItemAction(event) {
   const button = event.target.closest("button[data-item-action]");
   if (!button) return;
+
+  if (button.dataset.itemAction === "assign") {
+    try {
+      openAssignmentDialog({ type: "item", itemId: button.dataset.itemId });
+    } catch (error) {
+      itemsStatusEl.textContent = error.message;
+      itemsStatusEl.classList.add("error");
+    }
+    return;
+  }
 
   if (button.dataset.itemAction === "edit") {
     const item = invoiceBook.listItems().find((entry) => entry.id === button.dataset.itemId);
@@ -574,7 +809,9 @@ function handleItemAction(event) {
 
   try {
     const item = invoiceBook.removeItem(button.dataset.itemId);
+    shares.removeItem(item.id);
     renderInvoiceBook();
+    renderParticipants();
     itemsStatusEl.textContent = `${item.name} removido da lista de itens.`;
     itemsStatusEl.classList.remove("error");
   } catch (error) {
@@ -596,6 +833,7 @@ itemEditForm.addEventListener("submit", (event) => {
     });
     itemEditDialog.close();
     renderInvoiceBook();
+    renderParticipants();
     itemsStatusEl.textContent = `${item.name} atualizado.`;
     itemsStatusEl.classList.remove("error");
   } catch (error) {

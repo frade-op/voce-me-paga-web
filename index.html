@@ -170,6 +170,24 @@
         </form>
       </dialog>
 
+      <dialog id="assignment-dialog" aria-labelledby="assignment-title">
+        <form id="assignment-form" method="dialog">
+          <h2 id="assignment-title">Editar divisão</h2>
+          <p id="assignment-description" class="section-description"></p>
+          <div
+            id="assignment-options"
+            class="assignment-options"
+            role="group"
+            aria-labelledby="assignment-title"
+          ></div>
+          <p id="assignment-error" class="participant-status error" role="status" hidden></p>
+          <div class="dialog-actions">
+            <button id="cancel-assignment" class="secondary-button" type="button">Cancelar</button>
+            <button type="submit">Salvar divisão</button>
+          </div>
+        </form>
+      </dialog>
+
       <footer class="page-footer">Feito para dividir a conta sem complicação.</footer>
     </main>
 

@@ -14,8 +14,71 @@
   --border: #dce7e1;
 }
 
+#assignment-form {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+#assignment-form h2,
+#assignment-form p {
+  margin: 0;
+}
+
+#assignment-dialog .assignment-options {
+  display: grid;
+  max-height: min(50vh, 420px);
+  gap: 0.5rem;
+  overflow-y: auto;
+  padding: 0.15rem;
+}
+
+.assignment-option {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fbfdfc;
+  color: var(--green-dark);
+  cursor: pointer;
+}
+
+.assignment-option input {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+  accent-color: var(--green-action);
+}
+
+.assignment-option .participant-avatar {
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.72rem;
+}
+
+.assignment-option-name {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.assignment-option-detail {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
 * {
   box-sizing: border-box;
+}
+
+.icon-button.assign-icon {
+  border-color: #99f6e4;
+  background: #ccfbf1;
+  color: #0f766e;
 }
 
 body {
@@ -25,6 +88,28 @@ body {
   background:
     radial-gradient(ellipse at 50% 0, rgb(34 197 94 / 0.08), transparent 32rem),
     #f9fafb;
+}
+
+.participant-summary {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.participant-due {
+  padding-left: 3.25rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.participant-items-button {
+  min-height: 38px;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid #99f6e4;
+  background: #ccfbf1;
+  color: #0f766e;
+  font-size: 0.82rem;
 }
 
 main {
@@ -321,7 +406,7 @@ h1 {
   position: sticky;
   right: 0;
   z-index: 1;
-  min-width: 104px;
+  min-width: 148px;
   background: #fff;
   box-shadow: -8px 0 10px -8px rgb(2 44 34 / 0.3);
 }
@@ -373,7 +458,8 @@ tfoot .actions-column {
   color: #b91c1c;
 }
 
-#item-edit-dialog {
+#item-edit-dialog,
+#assignment-dialog {
   width: min(100% - 2rem, 480px);
   max-height: min(90vh, 720px);
   padding: 1.5rem;
@@ -383,7 +469,8 @@ tfoot .actions-column {
   box-shadow: 0 24px 80px rgb(2 44 34 / 0.3);
 }
 
-#item-edit-dialog::backdrop {
+#item-edit-dialog::backdrop,
+#assignment-dialog::backdrop {
   background: rgb(2 44 34 / 0.55);
 }
 
@@ -655,6 +742,77 @@ table {
 
 .consolidated-table {
   min-width: 0;
+}
+
+.item-name-cell {
+  white-space: normal;
+}
+
+.item-name-cell,
+.item-name {
+  min-width: 0;
+}
+
+.item-name-content {
+  display: flex;
+  min-width: 12rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.item-name {
+  flex: 1;
+}
+
+.item-name-content .item-share-stack {
+  margin-left: auto;
+}
+
+.item-name {
+  overflow-wrap: anywhere;
+}
+
+.item-share-stack {
+  display: inline-flex;
+  min-width: 2rem;
+  flex: 0 0 auto;
+  align-items: center;
+  padding-left: 0.4rem;
+}
+
+.item-share-avatar,
+.item-share-count {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+  box-shadow: 0 1px 3px rgb(2 44 34 / 0.2);
+}
+
+.item-share-avatar + .item-share-avatar,
+.item-share-count {
+  margin-left: -0.65rem;
+}
+
+.item-share-count {
+  position: relative;
+  z-index: 2;
+  background: #334155;
+  font-size: 0.68rem;
+}
+
+.item-share-empty {
+  color: #9ca3af;
+  font-size: 1.15rem;
+  text-align: center;
 }
 
 th,
