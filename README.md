@@ -8,12 +8,29 @@ cada nota expansível e consolida seus itens em uma tabela editável.
 
 ## Identidade visual
 
-- Logo: [images/logo.png](images/logo.png), exibida inteira em proporção quadrada no cabeçalho.
+- Logo: [assets/images/logo.png](assets/images/logo.png), exibida inteira em proporção quadrada no cabeçalho.
 - Verde ação: `#22C55E` e `#10B981`, usado no botão principal e nos destaques.
 - Verdes de confiança: `#064E3B` e `#022C22`, usados no cabeçalho e em títulos.
 - Fundo neutro: `#F9FAFB`; cartões usam branco para manter leitura clara.
 - Tipografia: Inter com fallback para fontes sans-serif do sistema.
 - Tom de voz: direto, informal e focado em facilitar a divisão da conta.
+
+## Estrutura de pastas
+
+```text
+index.html            página única (servida na raiz)
+assets/
+  css/styles.css      estilos
+  images/             logo.png, logo.jpg e favicon.svg
+  vendor/jsQR.js      biblioteca de terceiros
+src/
+  app.js              interface e eventos (ponto de entrada)
+  config.js           ambiente e URL da API
+  i18n.mjs            textos e traduções
+  export.mjs          resumo em .md/.txt
+  domain/             regras sem DOM: invoices, participants, shares, qr
+tests/                testes com node --test
+```
 
 ## Estado do produto
 
@@ -47,27 +64,63 @@ O botão "Ler QR Code" do cartão de consulta abre a câmera (traseira em celula
 detecta o QR Code da NFC-e e preenche o campo de link; o usuário confere e clica em "Adicionar nota".
 "Tirar foto" abre a câmera nativa do celular (ou seletor de imagem) como alternativa quando a câmera
 ao vivo não está disponível. Usa `BarcodeDetector` quando existe e a biblioteca
-[jsQR](https://github.com/cozmo/jsQR) (Apache-2.0, em `vendor/jsQR.js`) como alternativa.
+[jsQR](https://github.com/cozmo/jsQR) (Apache-2.0, em `assets/vendor/jsQR.js`) como alternativa.
 Cobranças Pix ainda não estão implementadas.
+
+## Favicon
+
+O ícone da aba fica em [assets/images/favicon.svg](assets/images/favicon.svg) (recibo com marca de confirmado, nas cores da
+marca) e é referenciado no `<head>` de [index.html](index.html).
+
+## Exportar resumo
+
+O cartão "Exportar resumo", no fim da página, baixa um arquivo `.md` (Markdown) ou `.txt`, à
+escolha do usuário, com visão geral (total da compra, total atribuído e total sem pagantes),
+quanto cada pagante deve com os itens de cada um e a tabela de produtos com origem e pagantes.
+O texto sai no idioma ativo. A geração fica em [src/export.mjs](src/export.mjs) (`buildSummary`) e é
+independente do DOM.
+
+## Idiomas
+
+O site existe em português (padrão) e inglês. Os botões PT/EN no cabeçalho trocam o idioma; a
+escolha fica em `localStorage` (`vc-me-paga-language`) e, sem escolha salva, vale o idioma do
+navegador. Textos ficam em [src/i18n.mjs](src/i18n.mjs) (`MESSAGES.pt` e `MESSAGES.en` devem ter as mesmas
+chaves; um teste confere). Textos estáticos usam `data-i18n` e `data-i18n-attr` no HTML. Erros dos
+módulos de domínio continuam em português e são traduzidos na exibição por `translateError`.
+Mensagens enviadas pela API aparecem no idioma da API.
 
 ## Próximos passos
 
 1. Apresentar resumo da divisão por pagante; integração com cobrança Pix pode vir depois.
+2. Salvar os dados do usuário em banco de dados:
+   - Definir a API de persistência (por exemplo, em `invoice-searcher-api` ou serviço novo) com
+     autenticação e entidades `Compra`, `Pagante`, `Item`, `Divisão` e `Nota`.
+   - Salvar a compra a cada mudança (ou por botão "Salvar") e listar compras anteriores.
+   - Carregar a compra salva ao abrir o app, substituindo a perda de dados ao recarregar.
+   - Tratar privacidade (LGPD): consentimento, exclusão de dados e minimização de dados pessoais.
+3. Importar dados no mesmo formato do arquivo exportado:
+   - Tornar o formato Markdown/TXT do resumo estável e versionado (cabeçalho com versão) e criar
+     um parser que reconstrua pagantes, itens e divisões a partir dele.
+   - Considerar também um formato estruturado (JSON) para importação sem perdas, já que o resumo
+     legível arredonda e omite campos como código do item.
+   - Adicionar botão "Importar resumo" com validação, pré-visualização e tratamento de nomes
+     duplicados antes de mesclar com a compra atual.
+   - Cobrir o parser com testes de ida e volta (exportar e importar devem resultar nos mesmos dados).
 
 A câmera ao vivo depende de permissão do usuário e de contexto seguro (HTTPS), exceto em
 `localhost`/`127.0.0.1`. Em celulares na rede local via HTTP, use "Tirar foto".
 
 ## Testes
 
-Execute os testes de pagantes, itens e QR Code com Node.js:
+Execute os testes de pagantes, itens, QR Code, exportação e idiomas com Node.js:
 
 ```powershell
-node --test tests/participants.test.mjs tests/invoices.test.mjs tests/shares.test.mjs tests/qr.test.mjs
+node --test tests/participants.test.mjs tests/invoices.test.mjs tests/shares.test.mjs tests/qr.test.mjs tests/export.test.mjs
 ```
 
 ## Ambientes
 
-Edite a constante `ENV` em [config.js](config.js) (`local`, `test` ou `prod`) para escolher
+Edite a constante `ENV` em [src/config.js](src/config.js) (`local`, `test` ou `prod`) para escolher
 qual instância do serviço será chamada. Ajuste as URLs em `API_URLS` conforme necessário.
 
 ## Executando
@@ -102,7 +155,7 @@ adicional informa quantos outros pagantes estão atribuídos. O tooltip lista to
 Configure colunas da tabela consolidada pelo menu no canto superior direito;
 Item e Ações permanecem visíveis. O formulário de item manual fica abaixo da tabela. Ordene
 qualquer tabela clicando nos cabeçalhos. Os ícones de edição e remoção têm tooltips. A coluna de
-ações permanece fixa à direita durante a rolagem horizontal. O logo fica em `images/logo.png`;
+ações permanece fixa à direita durante a rolagem horizontal. O logo fica em `assets/images/logo.png`;
 preserve esse caminho ao publicar o front-end.
 
 ## Modo Caveman para assistentes de IA

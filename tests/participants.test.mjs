@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ParticipantRoster } from "../participants.mjs";
+import { ParticipantRoster } from "../src/domain/participants.mjs";
 
 test("adds trimmed first and last names with initials and a random avatar color", () => {
   const roster = new ParticipantRoster();

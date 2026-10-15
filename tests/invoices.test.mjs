@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { InvoiceBook, sortItems } from "../invoices.mjs";
+import { InvoiceBook, sortItems } from "../src/domain/invoices.mjs";
 
 function invoice(number, products = []) {
   return {

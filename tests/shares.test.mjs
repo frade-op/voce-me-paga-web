@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ItemShares } from "../shares.mjs";
+import { ItemShares } from "../src/domain/shares.mjs";
 
 const participants = [
   { id: "p1", name: "Ana Silva" },

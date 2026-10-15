@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { extractInvoiceUrl, isCameraContextSecure } from "../qr.mjs";
+import { extractInvoiceUrl, isCameraContextSecure } from "../src/domain/qr.mjs";
 
 test("extrai URL http(s) do texto do QR Code", () => {
   const url = "https://www.fazenda.gov.br/nfce/qrcode?p=123|2|1|1|ABC";

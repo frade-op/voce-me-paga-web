@@ -9,23 +9,29 @@
     />
     <meta name="theme-color" content="#064e3b" />
     <title>vc me paga — A nota lida. A conta dividida.</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/css/styles.css" />
   </head>
   <body>
     <main>
       <header class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">Dividir fica mais fácil</p>
+          <p class="eyebrow" data-i18n="hero.eyebrow">Dividir fica mais fácil</p>
           <h1>vc me paga</h1>
-          <p class="tagline">A nota lida. A conta dividida.</p>
-          <p class="subtitle">
+          <p class="tagline" data-i18n="hero.tagline">A nota lida. A conta dividida.</p>
+          <p class="subtitle" data-i18n="hero.subtitle">
             Reúna os itens de várias notas em uma só compra.
           </p>
+          <div class="lang-switch" role="group" aria-label="Idioma" data-i18n-attr="aria-label:lang.label">
+            <button type="button" class="lang-button" data-lang="pt" lang="pt">PT</button>
+            <button type="button" class="lang-button" data-lang="en" lang="en">EN</button>
+          </div>
         </div>
         <img
           class="brand-art"
-          src="images/logo.png"
+          src="assets/images/logo.png"
           alt="Logo vc me paga: conversa, nota fiscal e setas verdes"
+          data-i18n-attr="alt:hero.logoAlt"
           width="2000"
           height="3000"
         />
@@ -34,8 +40,8 @@
       <details class="participants-card collapsible-card" open aria-labelledby="participants-title">
         <summary class="section-heading collapsible-heading">
           <div>
-            <h2 id="participants-title">Quem vai participar?</h2>
-            <p class="section-description">
+            <h2 id="participants-title" data-i18n="participants.title">Quem vai participar?</h2>
+            <p class="section-description" data-i18n="participants.description">
               Cadastre, edite ou remova pagantes antes ou depois de consultar a nota.
             </p>
           </div>
@@ -43,7 +49,7 @@
 
         <div class="collapsible-content">
           <form id="participant-form">
-            <label class="visually-hidden" for="participant-first-name">Nome</label>
+            <label class="visually-hidden" for="participant-first-name" data-i18n="participants.firstName">Nome</label>
             <input
               id="participant-first-name"
               name="firstName"
@@ -52,9 +58,10 @@
               autocomplete="off"
               placeholder="Nome"
               aria-label="Nome"
+              data-i18n-attr="placeholder:participants.firstName,aria-label:participants.firstName"
               required
             />
-            <label class="visually-hidden" for="participant-last-name">Sobrenome</label>
+            <label class="visually-hidden" for="participant-last-name" data-i18n="participants.lastName">Sobrenome</label>
             <input
               id="participant-last-name"
               name="lastName"
@@ -63,40 +70,54 @@
               autocomplete="off"
               placeholder="Sobrenome"
               aria-label="Sobrenome"
+              data-i18n-attr="placeholder:participants.lastName,aria-label:participants.lastName"
               required
             />
-            <button type="submit">Adicionar pagante</button>
+            <button type="submit" data-i18n="participants.add">Adicionar pagante</button>
           </form>
           <p id="participant-status" class="participant-status" role="status" aria-live="polite"></p>
-          <p id="participants-empty" class="empty-state">Nenhum pagante cadastrado.</p>
-          <ul id="participants-list" class="participants-list" aria-label="Pagantes cadastrados"></ul>
+          <p id="participants-empty" class="empty-state" data-i18n="participants.empty">Nenhum pagante cadastrado.</p>
+          <ul
+            id="participants-list"
+            class="participants-list"
+            aria-label="Pagantes cadastrados"
+            data-i18n-attr="aria-label:participants.listLabel"
+          ></ul>
         </div>
       </details>
 
       <details class="lookup-card collapsible-card" open aria-labelledby="lookup-title">
         <summary class="section-heading collapsible-heading">
           <div>
-            <h2 id="lookup-title">Consultar nota fiscal</h2>
-            <p class="section-description">Adicione os links das notas que fazem parte da compra.</p>
+            <h2 id="lookup-title" data-i18n="lookup.title">Consultar nota fiscal</h2>
+            <p class="section-description" data-i18n="lookup.description">Adicione os links das notas que fazem parte da compra.</p>
           </div>
         </summary>
 
         <div class="collapsible-content">
           <form id="invoice-form">
-            <button id="scan-qr-btn" class="qr-scan-button" type="button" title="Ler QR Code" aria-label="Ler QR Code">
+            <button
+              id="scan-qr-btn"
+              class="qr-scan-button"
+              type="button"
+              title="Ler QR Code"
+              aria-label="Ler QR Code"
+              data-i18n-attr="title:lookup.scanQr,aria-label:lookup.scanQr"
+            >
               <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
                 <circle cx="12" cy="12.5" r="3.5" />
               </svg>
             </button>
-            <label class="visually-hidden" for="invoice-url">Link da nota fiscal</label>
+            <label class="visually-hidden" for="invoice-url" data-i18n="lookup.urlLabel">Link da nota fiscal</label>
             <input
               id="invoice-url"
               type="url"
               placeholder="Link do QR Code da NFC-e"
+              data-i18n-attr="placeholder:lookup.urlPlaceholder"
               required
             />
-            <button id="submit-btn" type="submit">Adicionar nota</button>
+            <button id="submit-btn" type="submit" data-i18n="lookup.submit">Adicionar nota</button>
           </form>
 
           <p id="status" role="status" aria-live="polite" hidden></p>
@@ -106,19 +127,19 @@
       <section class="result-card combined-items" aria-labelledby="combined-items-title">
         <div class="section-heading combined-heading">
           <div>
-            <h2 id="combined-items-title">Todos os itens</h2>
-            <p class="section-description">Itens das notas e itens adicionados manualmente.</p>
+            <h2 id="combined-items-title" data-i18n="items.title">Todos os itens</h2>
+            <p class="section-description" data-i18n="items.description">Itens das notas e itens adicionados manualmente.</p>
           </div>
           <details class="column-menu">
-            <summary aria-label="Escolher colunas visíveis">Colunas</summary>
+            <summary aria-label="Escolher colunas visíveis" data-i18n="items.columns" data-i18n-attr="aria-label:items.columnsMenu">Colunas</summary>
             <fieldset class="column-visibility">
-              <legend>Colunas visíveis</legend>
-              <label><input type="checkbox" data-column="code" /> Código</label>
-              <label><input type="checkbox" data-column="quantity" checked /> Qtd</label>
-              <label><input type="checkbox" data-column="unit" checked /> Un</label>
-              <label><input type="checkbox" data-column="unit_price" /> Preço un.</label>
-              <label><input type="checkbox" data-column="total_price" checked /> Total</label>
-              <label><input type="checkbox" data-column="source" /> Origem</label>
+              <legend data-i18n="items.columnsVisible">Colunas visíveis</legend>
+              <label><input type="checkbox" data-column="code" /> <span data-i18n="col.code">Código</span></label>
+              <label><input type="checkbox" data-column="quantity" checked /> <span data-i18n="col.quantity">Qtd</span></label>
+              <label><input type="checkbox" data-column="unit" checked /> <span data-i18n="col.unit">Un</span></label>
+              <label><input type="checkbox" data-column="unit_price" /> <span data-i18n="col.unit_price">Preço un.</span></label>
+              <label><input type="checkbox" data-column="total_price" checked /> <span data-i18n="col.total_price">Total</span></label>
+              <label><input type="checkbox" data-column="source" /> <span data-i18n="col.source">Origem</span></label>
             </fieldset>
           </details>
         </div>
@@ -133,52 +154,70 @@
 
         <p id="items-status" class="participant-status" role="status" aria-live="polite"></p>
         <form id="manual-item-form" class="manual-item-form">
-          <label class="visually-hidden" for="manual-item-name">Nome do item</label>
-          <input id="manual-item-name" name="name" type="text" maxlength="160" placeholder="Nome do item" required />
-          <label class="visually-hidden" for="manual-item-quantity">Quantidade</label>
+          <label class="visually-hidden" for="manual-item-name" data-i18n="items.manualName">Nome do item</label>
+          <input id="manual-item-name" name="name" type="text" maxlength="160" placeholder="Nome do item" data-i18n-attr="placeholder:items.manualName" required />
+          <label class="visually-hidden" for="manual-item-quantity" data-i18n="items.manualQuantity">Quantidade</label>
           <input id="manual-item-quantity" name="quantity" type="number" min="0.001" step="any" value="1" required />
-          <label class="visually-hidden" for="manual-item-unit">Unidade</label>
-          <input id="manual-item-unit" name="unit" type="text" maxlength="20" placeholder="Un." value="un." required />
-          <label class="visually-hidden" for="manual-item-price">Preço unitário</label>
-          <input id="manual-item-price" name="unit-price" type="number" min="0" step="0.01" placeholder="Preço unitário (R$)" required />
-          <button type="submit">Adicionar item</button>
+          <label class="visually-hidden" for="manual-item-unit" data-i18n="items.manualUnit">Unidade</label>
+          <input id="manual-item-unit" name="unit" type="text" maxlength="20" placeholder="Un." value="un." data-i18n-attr="placeholder:items.manualUnitPlaceholder" required />
+          <label class="visually-hidden" for="manual-item-price" data-i18n="items.manualPrice">Preço unitário</label>
+          <input id="manual-item-price" name="unit-price" type="number" min="0" step="0.01" placeholder="Preço unitário (R$)" data-i18n-attr="placeholder:items.manualPricePlaceholder" required />
+          <button type="submit" data-i18n="items.manualAdd">Adicionar item</button>
         </form>
       </section>
 
-      <section id="result" class="result-card invoices-card" aria-label="Notas da compra">
+      <section id="result" class="result-card invoices-card" aria-label="Notas da compra" data-i18n-attr="aria-label:invoices.title">
         <div class="section-heading">
           <div>
-            <h2>Notas da compra</h2>
-            <p class="section-description">Abra cada nota para conferir os itens importados.</p>
+            <h2 data-i18n="invoices.title">Notas da compra</h2>
+            <p class="section-description" data-i18n="invoices.description">Abra cada nota para conferir os itens importados.</p>
           </div>
         </div>
-        <p id="invoices-empty" class="empty-state">As notas adicionadas aparecerão aqui.</p>
+        <p id="invoices-empty" class="empty-state" data-i18n="invoices.empty">As notas adicionadas aparecerão aqui.</p>
         <div id="invoices-list" class="invoices-list"></div>
+      </section>
+
+      <section class="result-card export-card" aria-labelledby="export-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="export-title" data-i18n="export.title">Exportar resumo</h2>
+            <p class="section-description" data-i18n="export.description">Baixe um resumo dos pagantes e produtos com os valores.</p>
+          </div>
+        </div>
+        <form id="export-form" class="export-form">
+          <label for="export-format" data-i18n="export.format">Formato</label>
+          <select id="export-format" name="format">
+            <option value="md">Markdown (.md)</option>
+            <option value="txt" data-i18n="export.txt">Texto (.txt)</option>
+          </select>
+          <button type="submit" data-i18n="export.button">Exportar resumo</button>
+        </form>
+        <p id="export-status" class="participant-status" role="status" aria-live="polite"></p>
       </section>
 
       <dialog id="item-edit-dialog" aria-labelledby="item-edit-title">
         <form id="item-edit-form" method="dialog">
-          <h2 id="item-edit-title">Editar item</h2>
-          <label for="edit-item-name">Item</label>
+          <h2 id="item-edit-title" data-i18n="edit.title">Editar item</h2>
+          <label for="edit-item-name" data-i18n="col.name">Item</label>
           <input id="edit-item-name" name="name" type="text" maxlength="160" required />
-          <label for="edit-item-code">Código</label>
+          <label for="edit-item-code" data-i18n="edit.code">Código</label>
           <input id="edit-item-code" name="code" type="text" maxlength="80" />
-          <label for="edit-item-quantity">Quantidade</label>
+          <label for="edit-item-quantity" data-i18n="items.manualQuantity">Quantidade</label>
           <input id="edit-item-quantity" name="quantity" type="number" min="0.001" step="any" required />
-          <label for="edit-item-unit">Unidade</label>
+          <label for="edit-item-unit" data-i18n="items.manualUnit">Unidade</label>
           <input id="edit-item-unit" name="unit" type="text" maxlength="20" required />
-          <label for="edit-item-price">Preço unitário</label>
+          <label for="edit-item-price" data-i18n="items.manualPrice">Preço unitário</label>
           <input id="edit-item-price" name="unit_price" type="number" min="0" step="0.01" required />
           <div class="dialog-actions">
-            <button id="cancel-item-edit" class="secondary-button" type="button">Cancelar</button>
-            <button type="submit">Salvar alterações</button>
+            <button id="cancel-item-edit" class="secondary-button" type="button" data-i18n="edit.cancel">Cancelar</button>
+            <button type="submit" data-i18n="edit.save">Salvar alterações</button>
           </div>
         </form>
       </dialog>
 
       <dialog id="assignment-dialog" aria-labelledby="assignment-title">
         <form id="assignment-form" method="dialog">
-          <h2 id="assignment-title">Editar divisão</h2>
+          <h2 id="assignment-title" data-i18n="assign.title">Editar divisão</h2>
           <p id="assignment-description" class="section-description"></p>
           <div
             id="assignment-options"
@@ -188,33 +227,33 @@
           ></div>
           <p id="assignment-error" class="participant-status error" role="status" hidden></p>
           <div class="dialog-actions">
-            <button id="cancel-assignment" class="secondary-button" type="button">Cancelar</button>
-            <button type="submit">Salvar divisão</button>
+            <button id="cancel-assignment" class="secondary-button" type="button" data-i18n="assign.cancel">Cancelar</button>
+            <button type="submit" data-i18n="assign.save">Salvar divisão</button>
           </div>
         </form>
       </dialog>
 
       <dialog id="qr-dialog" aria-labelledby="qr-title">
         <div id="qr-panel">
-          <h2 id="qr-title">Ler QR Code da nota</h2>
-          <p class="section-description">Aponte a câmera para o QR Code da NFC-e.</p>
+          <h2 id="qr-title" data-i18n="qr.title">Ler QR Code da nota</h2>
+          <p class="section-description" data-i18n="qr.hint">Aponte a câmera para o QR Code da NFC-e.</p>
           <div class="qr-viewport">
             <video id="qr-video" playsinline muted></video>
           </div>
           <p id="qr-status" class="participant-status" role="status" aria-live="polite"></p>
           <input id="qr-photo-input" type="file" accept="image/*" capture="environment" hidden />
           <div class="dialog-actions">
-            <button id="qr-photo-btn" class="secondary-button" type="button">Tirar foto</button>
-            <button id="qr-close-btn" class="secondary-button" type="button">Fechar</button>
+            <button id="qr-photo-btn" class="secondary-button" type="button" data-i18n="qr.photo">Tirar foto</button>
+            <button id="qr-close-btn" class="secondary-button" type="button" data-i18n="qr.close">Fechar</button>
           </div>
         </div>
       </dialog>
 
-      <footer class="page-footer">Feito para dividir a conta sem complicação.</footer>
+      <footer class="page-footer" data-i18n="footer">Feito para dividir a conta sem complicação.</footer>
     </main>
 
-    <script src="config.js"></script>
-    <script src="vendor/jsQR.js"></script>
-    <script type="module" src="app.js"></script>
+    <script src="src/config.js"></script>
+    <script src="assets/vendor/jsQR.js"></script>
+    <script type="module" src="src/app.js"></script>
   </body>
 </html>

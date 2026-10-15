@@ -1,7 +1,20 @@
-import { InvoiceBook, sortItems } from "./invoices.mjs";
-import { ParticipantRoster } from "./participants.mjs";
-import { ItemShares } from "./shares.mjs";
-import { extractInvoiceUrl, isCameraContextSecure } from "./qr.mjs";
+import { InvoiceBook, sortItems } from "./domain/invoices.mjs";
+import { ParticipantRoster } from "./domain/participants.mjs";
+import { ItemShares } from "./domain/shares.mjs";
+import { extractInvoiceUrl, isCameraContextSecure } from "./domain/qr.mjs";
+import { EXPORT_FORMATS, buildSummary, summaryFileName } from "./export.mjs";
+import { LOCALES, detectLanguage, translate, translateError, translateSource } from "./i18n.mjs";
+
+const LANGUAGE_STORAGE_KEY = "vc-me-paga-language";
+let language = "pt";
+try {
+  language = detectLanguage(localStorage.getItem(LANGUAGE_STORAGE_KEY), navigator.language);
+} catch {
+  language = detectLanguage(null, navigator.language);
+}
+const t = (key, params) => translate(language, key, params);
+const errorText = (error) => translateError(language, error.message);
+const countLabel = (count) => t(count === 1 ? "items.one" : "items.many");
 
 const participantForm = document.getElementById("participant-form");
 const participantFirstNameInput = document.getElementById("participant-first-name");
@@ -30,8 +43,13 @@ const assignmentError = document.getElementById("assignment-error");
 const columnToggles = [...document.querySelectorAll(".column-visibility input[data-column]")];
 const sortStates = new Map();
 
-const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-const quantity = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 });
+let currency;
+let quantity;
+function updateFormatters() {
+  currency = new Intl.NumberFormat(LOCALES[language], { style: "currency", currency: "BRL" });
+  quantity = new Intl.NumberFormat(LOCALES[language], { maximumFractionDigits: 3 });
+}
+updateFormatters();
 const participants = new ParticipantRoster();
 const invoiceBook = new InvoiceBook();
 const shares = new ItemShares();
@@ -101,14 +119,14 @@ function renderParticipants(focusEditingInput = false) {
       const label = document.createElement("label");
       label.className = "visually-hidden";
       label.htmlFor = `edit-first-name-${participant.id}`;
-      label.textContent = `Editar nome de ${participant.name}`;
+      label.textContent = t("participants.editFirstName", { name: participant.name });
 
       const firstNameInput = document.createElement("input");
       firstNameInput.id = `edit-first-name-${participant.id}`;
       firstNameInput.name = "firstName";
       firstNameInput.type = "text";
       firstNameInput.maxLength = 50;
-      firstNameInput.placeholder = "Nome";
+      firstNameInput.placeholder = t("participants.firstName");
       firstNameInput.autocomplete = "given-name";
       firstNameInput.value = participant.firstName;
       firstNameInput.required = true;
@@ -118,7 +136,7 @@ function renderParticipants(focusEditingInput = false) {
       lastNameInput.name = "lastName";
       lastNameInput.type = "text";
       lastNameInput.maxLength = 50;
-      lastNameInput.placeholder = "Sobrenome";
+      lastNameInput.placeholder = t("participants.lastName");
       lastNameInput.autocomplete = "family-name";
       lastNameInput.value = participant.lastName;
       lastNameInput.required = true;
@@ -127,13 +145,13 @@ function renderParticipants(focusEditingInput = false) {
       actions.className = "participant-actions";
       const saveButton = document.createElement("button");
       saveButton.type = "submit";
-      saveButton.textContent = "Salvar";
-      const cancelButton = createParticipantButton("Cancelar", "cancel", participant);
+      saveButton.textContent = t("participants.save");
+      const cancelButton = createParticipantButton(t("participants.cancel"), "cancel", participant);
       actions.append(saveButton, cancelButton);
       const lastNameLabel = document.createElement("label");
       lastNameLabel.className = "visually-hidden";
       lastNameLabel.htmlFor = lastNameInput.id;
-      lastNameLabel.textContent = `Editar sobrenome de ${participant.name}`;
+      lastNameLabel.textContent = t("participants.editLastName", { name: participant.name });
       editForm.append(label, firstNameInput, lastNameLabel, lastNameInput, actions);
       item.append(editForm);
       if (focusEditingInput) firstNameInput.focus();
@@ -155,14 +173,14 @@ function renderParticipants(focusEditingInput = false) {
     summary.className = "participant-summary";
     const due = document.createElement("span");
     due.className = "participant-due";
-    due.textContent = `Deve ${money(totals.get(participant.id) / 100)}`;
+    due.textContent = t("participants.owes", { amount: money(totals.get(participant.id) / 100) });
     summary.append(identity, due);
     const actions = document.createElement("div");
     actions.className = "participant-actions";
     actions.append(
-      createParticipantButton("Editar itens", "assign-items", participant),
-      createParticipantButton("Editar", "edit", participant),
-      createParticipantButton("Remover", "remove", participant)
+      createParticipantButton(t("participants.editItems"), "assign-items", participant),
+      createParticipantButton(t("participants.edit"), "edit", participant),
+      createParticipantButton(t("participants.remove"), "remove", participant)
     );
     item.append(summary, actions);
     return item;
@@ -180,12 +198,12 @@ participantForm.addEventListener("submit", (event) => {
       participantLastNameInput.value
     );
     participantForm.reset();
-    setParticipantStatus(`${participant.name} adicionado.`);
+    setParticipantStatus(t("participants.added", { name: participant.name }));
     renderParticipants();
     renderInvoiceBook();
     participantFirstNameInput.focus();
   } catch (error) {
-    setParticipantStatus(error.message, true);
+    setParticipantStatus(errorText(error), true);
     participantFirstNameInput.focus();
   }
 });
@@ -211,7 +229,7 @@ participantsListEl.addEventListener("click", (event) => {
     try {
       openAssignmentDialog({ type: "participant", participantId });
     } catch (error) {
-      setParticipantStatus(error.message, true);
+      setParticipantStatus(errorText(error), true);
     }
     return;
   }
@@ -220,11 +238,11 @@ participantsListEl.addEventListener("click", (event) => {
       const participant = participants.remove(participantId);
       shares.removeParticipant(participantId);
       editingParticipantId = null;
-      setParticipantStatus(`${participant.name} removido.`);
+      setParticipantStatus(t("participants.removed", { name: participant.name }));
       renderParticipants();
       renderInvoiceBook();
     } catch (error) {
-      setParticipantStatus(error.message, true);
+      setParticipantStatus(errorText(error), true);
     }
   }
 });
@@ -243,11 +261,11 @@ participantsListEl.addEventListener("submit", (event) => {
       lastNameInput.value
     );
     editingParticipantId = null;
-    setParticipantStatus(`${participant.name} atualizado.`);
+    setParticipantStatus(t("participants.updated", { name: participant.name }));
     renderParticipants();
     renderInvoiceBook();
   } catch (error) {
-    setParticipantStatus(error.message, true);
+    setParticipantStatus(errorText(error), true);
     firstNameInput.focus();
   }
 });
@@ -274,11 +292,8 @@ function createItemShareStack(item) {
   const stack = document.createElement("span");
   stack.className = "item-share-stack";
   const names = assigned.map(({ name }) => name);
-  stack.title = names.length ? `Pagantes: ${names.join(", ")}` : "Nenhum pagante atribuído";
-  stack.setAttribute(
-    "aria-label",
-    names.length ? `Pagantes: ${names.join(", ")}` : "Nenhum pagante atribuído"
-  );
+  stack.title = names.length ? t("items.payers", { names: names.join(", ") }) : t("items.noPayers");
+  stack.setAttribute("aria-label", stack.title);
 
   const visibleParticipants = assigned.slice(0, 2);
   for (const participant of visibleParticipants) {
@@ -308,14 +323,14 @@ function createItemShareStack(item) {
 
 function renderInfo(invoice, container) {
   const { issuer } = invoice;
-  const issuedAt = invoice.issued_at ? new Date(invoice.issued_at).toLocaleString("pt-BR") : "-";
+  const issuedAt = invoice.issued_at ? new Date(invoice.issued_at).toLocaleString(LOCALES[language]) : "-";
   const lines = [
-    ["Emissor", issuer?.name],
-    ["CNPJ", issuer?.cnpj],
-    ["Endereço", issuer?.address],
-    ["Emissão", issuedAt],
-    ["Nota / Série", `${invoice.number ?? "-"} / ${invoice.series ?? "-"}`],
-    ["Chave de acesso", invoice.access_key],
+    [t("invoice.issuer"), issuer?.name],
+    [t("invoice.cnpj"), issuer?.cnpj],
+    [t("invoice.address"), issuer?.address],
+    [t("invoice.issuedAt"), issuedAt],
+    [t("invoice.numberSeries"), `${invoice.number ?? "-"} / ${invoice.series ?? "-"}`],
+    [t("invoice.accessKey"), invoice.access_key],
   ];
   container.replaceChildren(
     ...lines.map(([label, value]) => {
@@ -353,7 +368,7 @@ function renderItemTable(
       ["unit_price", money(item.unit_price), "num"],
       ["total_price", money(item.total_price), "num"],
     ];
-    if (includeSource) columns.push(["source", item.source, ""]);
+    if (includeSource) columns.push(["source", translateSource(language, item.source), ""]);
     for (const [column, value, className] of columns) {
       const tableCell = cell(value, className);
       tableCell.dataset.column = column;
@@ -384,8 +399,8 @@ function renderItemTable(
       toggle.type = "button";
       toggle.className = "icon-button actions-toggle";
       toggle.dataset.actionsToggle = "";
-      toggle.title = `Ações de ${item.name}`;
-      toggle.setAttribute("aria-label", `Ações de ${item.name}`);
+      toggle.title = t("items.actionsOf", { name: item.name });
+      toggle.setAttribute("aria-label", toggle.title);
       toggle.setAttribute("aria-expanded", "false");
       toggle.setAttribute("aria-controls", actions.id);
       toggle.innerHTML =
@@ -401,7 +416,7 @@ function renderItemTable(
 
   if (!items.length) {
     const row = document.createElement("tr");
-    const message = cell("Nenhum item nesta lista.");
+    const message = cell(t("items.none"));
     message.colSpan =
       (includeSource ? 6 : visibleColumns.length) + Number(includeSource) + Number(allowRemoval);
     row.append(message);
@@ -419,7 +434,7 @@ function renderItemTable(
     tableCell.dataset.column = column;
     tableCell.hidden = !includeSource && !visibleColumns.includes(column);
     if (column === "name") {
-      tableCell.textContent = `Total (${totalItems} ${totalItems === 1 ? "item" : "itens"})`;
+      tableCell.textContent = t("items.total", { count: totalItems, itemLabel: countLabel(totalItems) });
     } else if (column === "total_price") {
       tableCell.textContent = money(total);
       tableCell.className = "num";
@@ -438,7 +453,11 @@ function createItemActionButton(action, item) {
   const button = document.createElement("button");
   const isEdit = action === "edit";
   const isAssign = action === "assign";
-  const label = isEdit ? "Editar" : isAssign ? "Editar pagantes de" : "Remover";
+  const label = isEdit
+    ? t("participants.edit")
+    : isAssign
+      ? t("items.assignPayers")
+      : t("participants.remove");
   button.type = "button";
   const iconClass = isEdit ? "edit-icon" : isAssign ? "assign-icon" : "delete-icon";
   button.className = `icon-button ${iconClass}`;
@@ -471,7 +490,7 @@ function renderPayments(invoice, container) {
     return;
   }
   const title = document.createElement("h3");
-  title.textContent = "Pagamentos";
+  title.textContent = t("invoice.payments");
   const list = document.createElement("ul");
   list.replaceChildren(
     ...invoice.payments.map((p) => {
@@ -499,10 +518,14 @@ function renderInvoiceBook() {
       invoice.total_amount ??
       invoice.products.reduce((sum, item) => sum + item.total_price, 0);
     const itemCount = invoice.total_items ?? invoice.products.length;
-    const itemLabel = itemCount === 1 ? "item" : "itens";
-    summary.textContent = `Nota ${invoice.number} / Série ${invoice.series} · ${
-      invoice.issuer.name
-    } · ${itemCount} ${itemLabel} · ${money(invoice.total_amount ?? itemTotal)}`;
+    summary.textContent = t("invoices.summary", {
+      number: invoice.number,
+      series: invoice.series,
+      issuer: invoice.issuer.name,
+      count: itemCount,
+      itemLabel: countLabel(itemCount),
+      total: money(invoice.total_amount ?? itemTotal),
+    });
 
     const content = document.createElement("div");
     content.className = "invoice-content";
@@ -562,14 +585,14 @@ function createTableHead(
   const head = document.createElement("thead");
   const row = document.createElement("tr");
   const columns = [
-    ["name", "Item"],
-    ["code", "Código"],
-    ["quantity", "Qtd"],
-    ["unit", "Un"],
-    ["unit_price", "Preço un."],
-    ["total_price", "Total"],
+    ["name", t("col.name")],
+    ["code", t("col.code")],
+    ["quantity", t("col.quantity")],
+    ["unit", t("col.unit")],
+    ["unit_price", t("col.unit_price")],
+    ["total_price", t("col.total_price")],
   ];
-  if (includeSource) columns.push(["source", "Origem"]);
+  if (includeSource) columns.push(["source", t("col.source")]);
   for (const [key, label] of columns) {
     const header = document.createElement("th");
     header.dataset.column = key;
@@ -593,7 +616,7 @@ function createTableHead(
   if (allowActions) {
     const actions = document.createElement("th");
     actions.className = "actions-column";
-    actions.textContent = "Ações";
+    actions.textContent = t("col.actions");
     row.append(actions);
   }
   head.append(row);
@@ -602,15 +625,15 @@ function createTableHead(
 
 function errorMessage(status, body) {
   if (typeof body?.detail === "string") return body.detail;
-  if (status === 422) return "URL inválida ou nota não reconhecida.";
-  if (status === 502) return "O portal da nota fiscal não respondeu. Tente novamente.";
-  return `Erro inesperado (${status}).`;
+  if (status === 422) return t("api.422");
+  if (status === 502) return t("api.502");
+  return t("api.unexpected", { status });
 }
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   submitBtn.disabled = true;
-  setStatus("Consultando nota fiscal...");
+  setStatus(t("lookup.loading"));
 
   try {
     const response = await fetch(`${window.API_BASE_URL}/invoices/parse`, {
@@ -630,16 +653,16 @@ form.addEventListener("submit", async (event) => {
     renderInvoiceBook();
     renderParticipants();
     form.reset();
-    const itemLabel = invoice.products.length === 1 ? "item" : "itens";
-    const noParticipantsNotice = participants.list().length
-      ? ""
-      : " Lembre-se de adicionar pagantes caso queira dividir os valores em mais de uma pessoa.";
-    setStatus(`Nota ${invoice.number} adicionada com ${invoice.products.length} ${itemLabel}.${noParticipantsNotice}`);
-  } catch (error) {
+    const noParticipantsNotice = participants.list().length ? "" : t("lookup.noParticipants");
     setStatus(
-      error instanceof TypeError ? "Não foi possível conectar ao serviço." : error.message,
-      true
+      t("lookup.added", {
+        number: invoice.number,
+        count: invoice.products.length,
+        itemLabel: countLabel(invoice.products.length),
+      }) + noParticipantsNotice
     );
+  } catch (error) {
+    setStatus(error instanceof TypeError ? t("api.connect") : errorText(error), true);
   } finally {
     submitBtn.disabled = false;
   }
@@ -673,12 +696,12 @@ function closeQrDialog() {
 function applyQrResult(text) {
   const url = extractInvoiceUrl(text);
   if (!url) {
-    setQrStatus("O QR Code lido não contém um link de nota fiscal.", true);
+    setQrStatus(t("qr.noLink"), true);
     return false;
   }
   urlInput.value = url;
   closeQrDialog();
-  setStatus("QR Code lido. Confira o link e clique em Adicionar nota.");
+  setStatus(t("lookup.qrRead"));
   submitBtn.focus();
   return true;
 }
@@ -717,7 +740,7 @@ async function scanQrLoop() {
 
 async function startQrCamera() {
   if (!isCameraContextSecure() || !navigator.mediaDevices?.getUserMedia) {
-    setQrStatus("Câmera ao vivo indisponível aqui. Use Tirar foto.", true);
+    setQrStatus(t("qr.unavailable"), true);
     return;
   }
   try {
@@ -727,17 +750,12 @@ async function startQrCamera() {
     });
     qrVideo.srcObject = qrStream;
     await qrVideo.play();
-    setQrStatus("Procurando QR Code...");
+    setQrStatus(t("qr.searching"));
     qrScanning = true;
     scanQrLoop();
   } catch (error) {
     stopQrCamera();
-    setQrStatus(
-      error?.name === "NotAllowedError"
-        ? "Permissão da câmera negada. Libere o acesso ou use Tirar foto."
-        : "Não foi possível abrir a câmera. Use Tirar foto.",
-      true
-    );
+    setQrStatus(error?.name === "NotAllowedError" ? t("qr.denied") : t("qr.openFailed"), true);
   }
 }
 
@@ -759,18 +777,18 @@ qrPhotoInput.addEventListener("change", async () => {
   const [file] = qrPhotoInput.files;
   qrPhotoInput.value = "";
   if (!file) return;
-  setQrStatus("Lendo foto...");
+  setQrStatus(t("qr.reading"));
   try {
     const bitmap = await createImageBitmap(file);
     const text = await detectQr(bitmap, bitmap.width, bitmap.height);
     bitmap.close?.();
     if (!text) {
-      setQrStatus("Nenhum QR Code encontrado na foto. Tente de novo mais perto.", true);
+      setQrStatus(t("qr.notFound"), true);
       return;
     }
     applyQrResult(text);
   } catch {
-    setQrStatus("Não foi possível ler a foto.", true);
+    setQrStatus(t("qr.readFailed"), true);
   }
 });
 
@@ -788,11 +806,11 @@ manualItemForm.addEventListener("submit", (event) => {
     manualItemForm.reset();
     renderInvoiceBook();
     renderParticipants();
-    itemsStatusEl.textContent = `${item.name} adicionado à compra.`;
+    itemsStatusEl.textContent = t("items.manualAdded", { name: item.name });
     itemsStatusEl.classList.remove("error");
     manualItemForm.elements.namedItem("name").focus();
   } catch (error) {
-    itemsStatusEl.textContent = error.message;
+    itemsStatusEl.textContent = errorText(error);
     itemsStatusEl.classList.add("error");
   }
 });
@@ -810,7 +828,7 @@ function openAssignmentDialog(target) {
   if (target.type === "item") {
     const item = items.find(({ id }) => id === target.itemId);
     if (!item) throw new Error("Item não encontrado.");
-    assignmentTitle.textContent = "Quem vai pagar este item?";
+    assignmentTitle.textContent = t("assign.itemTitle");
     assignmentDescription.textContent = `${item.name} · ${money(item.total_price)}`;
     options = participantList.map((participant) => ({
       id: participant.id,
@@ -822,8 +840,8 @@ function openAssignmentDialog(target) {
   } else {
     const participant = participantList.find(({ id }) => id === target.participantId);
     if (!participant) throw new Error("Pagante não encontrado.");
-    assignmentTitle.textContent = "Editar itens do pagante";
-    assignmentDescription.textContent = `Selecione os itens que ${participant.name} pagará.`;
+    assignmentTitle.textContent = t("assign.participantTitle");
+    assignmentDescription.textContent = t("assign.participantDescription", { name: participant.name });
     options = items.map((item) => ({
       id: item.id,
       label: item.name,
@@ -872,8 +890,8 @@ function openAssignmentDialog(target) {
     empty.className = "empty-state";
     empty.textContent =
       target.type === "item"
-        ? "Cadastre pagantes antes de atribuir este item."
-        : "Adicione itens à compra para configurar o pagamento.";
+        ? t("assign.noParticipants")
+        : t("assign.noItems");
     rows.push(empty);
   }
   assignmentOptions.replaceChildren(...rows);
@@ -894,7 +912,7 @@ assignmentForm.addEventListener("submit", (event) => {
         selectedIds,
         participants.list().map(({ id }) => id)
       );
-      itemsStatusEl.textContent = "Pagantes do item atualizados.";
+      itemsStatusEl.textContent = t("assign.itemUpdated");
     } else {
       const participant = participants
         .list()
@@ -904,7 +922,7 @@ assignmentForm.addEventListener("submit", (event) => {
         selectedIds,
         participants.list().map(({ id }) => id)
       );
-      itemsStatusEl.textContent = `Itens de ${participant.name} atualizados.`;
+      itemsStatusEl.textContent = t("assign.participantUpdated", { name: participant.name });
     }
     itemsStatusEl.classList.remove("error");
     assignmentDialog.close();
@@ -912,8 +930,8 @@ assignmentForm.addEventListener("submit", (event) => {
     renderParticipants();
   } catch (error) {
     assignmentError.hidden = false;
-    assignmentError.textContent = error.message;
-    itemsStatusEl.textContent = error.message;
+    assignmentError.textContent = errorText(error);
+    itemsStatusEl.textContent = errorText(error);
     itemsStatusEl.classList.add("error");
   }
 });
@@ -934,7 +952,7 @@ function handleItemAction(event) {
     try {
       openAssignmentDialog({ type: "item", itemId: button.dataset.itemId });
     } catch (error) {
-      itemsStatusEl.textContent = error.message;
+      itemsStatusEl.textContent = errorText(error);
       itemsStatusEl.classList.add("error");
     }
     return;
@@ -959,10 +977,10 @@ function handleItemAction(event) {
     shares.removeItem(item.id);
     renderInvoiceBook();
     renderParticipants();
-    itemsStatusEl.textContent = `${item.name} removido da lista de itens.`;
+    itemsStatusEl.textContent = t("items.removed", { name: item.name });
     itemsStatusEl.classList.remove("error");
   } catch (error) {
-    itemsStatusEl.textContent = error.message;
+    itemsStatusEl.textContent = errorText(error);
     itemsStatusEl.classList.add("error");
   }
 }
@@ -981,10 +999,10 @@ itemEditForm.addEventListener("submit", (event) => {
     itemEditDialog.close();
     renderInvoiceBook();
     renderParticipants();
-    itemsStatusEl.textContent = `${item.name} atualizado.`;
+    itemsStatusEl.textContent = t("items.updated", { name: item.name });
     itemsStatusEl.classList.remove("error");
   } catch (error) {
-    itemsStatusEl.textContent = error.message;
+    itemsStatusEl.textContent = errorText(error);
     itemsStatusEl.classList.add("error");
   }
 });
@@ -1009,4 +1027,84 @@ if (window.matchMedia("(max-width: 600px)").matches) {
     toggle.checked = toggle.dataset.column === "total_price";
   }
 }
+
+const exportForm = document.getElementById("export-form");
+const exportStatusEl = document.getElementById("export-status");
+
+exportForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const items = invoiceBook.listItems();
+  const participantList = participants.list();
+  if (!items.length && !participantList.length) {
+    exportStatusEl.textContent = t("export.empty");
+    exportStatusEl.classList.add("error");
+    return;
+  }
+  const format = exportForm.elements.namedItem("format").value;
+  const generatedAt = new Date();
+  const content = buildSummary({
+    format,
+    language,
+    participants: participantList,
+    items,
+    shares,
+    invoiceCount: invoiceBook.listInvoices().length,
+    generatedAt,
+  });
+  const fileName = summaryFileName(format, generatedAt);
+  const url = URL.createObjectURL(new Blob([content], { type: EXPORT_FORMATS[format].mime }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  exportStatusEl.textContent = t("export.done", { file: fileName });
+  exportStatusEl.classList.remove("error");
+});
+
+function applyTranslations() {
+  document.documentElement.lang = LOCALES[language];
+  document.title = t("meta.title");
+  document.querySelector('meta[name="description"]')?.setAttribute("content", t("meta.description"));
+  for (const element of document.querySelectorAll("[data-i18n]")) {
+    element.textContent = t(element.dataset.i18n);
+  }
+  for (const element of document.querySelectorAll("[data-i18n-attr]")) {
+    for (const pair of element.dataset.i18nAttr.split(",")) {
+      const [attribute, key] = pair.split(":");
+      element.setAttribute(attribute, t(key));
+    }
+  }
+  for (const button of document.querySelectorAll(".lang-button")) {
+    button.setAttribute("aria-pressed", String(button.dataset.lang === language));
+  }
+}
+
+function setLanguage(next) {
+  if (next === language) return;
+  language = next;
+  try {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+  } catch {
+    // Armazenamento indisponível; o idioma vale apenas nesta sessão.
+  }
+  updateFormatters();
+  applyTranslations();
+  for (const status of [statusEl, participantStatusEl, itemsStatusEl, exportStatusEl]) {
+    status.textContent = "";
+  }
+  statusEl.hidden = true;
+  renderParticipants();
+  renderInvoiceBook();
+}
+
+document.querySelector(".lang-switch").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-lang]");
+  if (button) setLanguage(button.dataset.lang);
+});
+
+applyTranslations();
+renderParticipants();
 renderInvoiceBook();
