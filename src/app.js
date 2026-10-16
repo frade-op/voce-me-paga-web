@@ -30,6 +30,9 @@ const invoicesListEl = document.getElementById("invoices-list");
 const invoicesEmptyEl = document.getElementById("invoices-empty");
 const combinedItemsEl = document.getElementById("combined-items");
 const combinedTotalsEl = document.getElementById("combined-totals");
+const paginationEl = document.getElementById("combined-pagination");
+const PAGE_SIZE = 10;
+let combinedPage = 1;
 const manualItemForm = document.getElementById("manual-item-form");
 const itemsStatusEl = document.getElementById("items-status");
 const itemEditDialog = document.getElementById("item-edit-dialog");
@@ -39,6 +42,7 @@ const assignmentForm = document.getElementById("assignment-form");
 const assignmentTitle = document.getElementById("assignment-title");
 const assignmentDescription = document.getElementById("assignment-description");
 const assignmentOptions = document.getElementById("assignment-options");
+const assignmentBulkEl = document.getElementById("assignment-bulk");
 const assignmentError = document.getElementById("assignment-error");
 const columnToggles = [...document.querySelectorAll(".column-visibility input[data-column]")];
 const sortStates = new Map();
@@ -63,6 +67,37 @@ function setParticipantStatus(message, isError = false) {
   participantStatusEl.classList.toggle("error", isError);
 }
 
+function renderPagination(pageCount, totalCount) {
+  paginationEl.hidden = totalCount <= PAGE_SIZE;
+  if (paginationEl.hidden) {
+    paginationEl.replaceChildren();
+    return;
+  }
+  const makeButton = (label, page, disabled, current = false) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "page-button";
+    button.textContent = label;
+    button.dataset.page = String(page);
+    button.disabled = disabled;
+    if (current) button.setAttribute("aria-current", "page");
+    return button;
+  };
+  const buttons = [makeButton(t("pagination.previous"), combinedPage - 1, combinedPage === 1)];
+  for (let page = 1; page <= pageCount; page += 1) {
+    buttons.push(makeButton(String(page), page, false, page === combinedPage));
+  }
+  buttons.push(makeButton(t("pagination.next"), combinedPage + 1, combinedPage === pageCount));
+  paginationEl.replaceChildren(...buttons);
+}
+
+paginationEl.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-page]");
+  if (!button || button.disabled) return;
+  combinedPage = Number(button.dataset.page);
+  renderInvoiceBook();
+});
+
 function sortTable(event) {
   const button = event.target.closest("button[data-sort-column]");
   if (!button) return;
@@ -74,6 +109,7 @@ function sortTable(event) {
   const direction =
     current?.column === button.dataset.sortColumn && current.direction === "asc" ? "desc" : "asc";
   sortStates.set(sortId, { column: button.dataset.sortColumn, direction });
+  if (sortId === "combined") combinedPage = 1;
   renderInvoiceBook();
 }
 
@@ -353,12 +389,20 @@ function renderItemTable(
     totalAmount,
     totalItems = items.length,
     visibleColumns = getVisibleColumns(),
+    paginate = false,
   } = {}
 ) {
   const sortId = body.closest("table")?.dataset.sortId ?? "combined";
   const sortState = sortStates.get(sortId) ?? { column: "name", direction: "asc" };
   const sortedItems = sortItems(items, sortState.column, sortState.direction);
-  const rows = sortedItems.map((item) => {
+  let pageItems = sortedItems;
+  if (paginate) {
+    const pageCount = Math.max(1, Math.ceil(sortedItems.length / PAGE_SIZE));
+    combinedPage = Math.min(Math.max(1, combinedPage), pageCount);
+    pageItems = sortedItems.slice((combinedPage - 1) * PAGE_SIZE, combinedPage * PAGE_SIZE);
+    renderPagination(pageCount, sortedItems.length);
+  }
+  const rows = pageItems.map((item) => {
     const row = document.createElement("tr");
     const columns = [
       ["name", item.name, "item-name-cell"],
@@ -569,6 +613,7 @@ function renderInvoiceBook() {
   invoicesEmptyEl.hidden = invoices.length > 0;
   renderItemTable(combinedItemsEl, combinedTotalsEl, invoiceBook.listItems(), {
     includeSource: true,
+    paginate: true,
   });
   document.querySelector(".consolidated-table thead").replaceWith(
     createTableHead(true, true, getVisibleColumns(), "combined")
@@ -895,6 +940,7 @@ function openAssignmentDialog(target) {
     rows.push(empty);
   }
   assignmentOptions.replaceChildren(...rows);
+  assignmentBulkEl.hidden = !options.length;
   assignmentDialog.showModal();
   assignmentOptions.querySelector("input")?.focus();
 }
@@ -933,6 +979,15 @@ assignmentForm.addEventListener("submit", (event) => {
     assignmentError.textContent = errorText(error);
     itemsStatusEl.textContent = errorText(error);
     itemsStatusEl.classList.add("error");
+  }
+});
+
+assignmentBulkEl.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-select-all]");
+  if (!button) return;
+  const checked = button.dataset.selectAll === "true";
+  for (const checkbox of assignmentOptions.querySelectorAll('input[name="selection"]')) {
+    checkbox.checked = checked;
   }
 });
 

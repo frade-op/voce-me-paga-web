@@ -151,6 +151,7 @@
             <tfoot id="combined-totals"></tfoot>
           </table>
         </div>
+        <nav id="combined-pagination" class="pagination" aria-label="Paginação" data-i18n-attr="aria-label:pagination.label" hidden></nav>
 
         <p id="items-status" class="participant-status" role="status" aria-live="polite"></p>
         <form id="manual-item-form" class="manual-item-form">
@@ -219,6 +220,10 @@
         <form id="assignment-form" method="dialog">
           <h2 id="assignment-title" data-i18n="assign.title">Editar divisão</h2>
           <p id="assignment-description" class="section-description"></p>
+          <div id="assignment-bulk" class="assignment-bulk">
+            <button type="button" class="secondary-button" data-select-all="true" data-i18n="assign.selectAll">Selecionar todos</button>
+            <button type="button" class="secondary-button" data-select-all="false" data-i18n="assign.deselectAll">Desmarcar todos</button>
+          </div>
           <div
             id="assignment-options"
             class="assignment-options"

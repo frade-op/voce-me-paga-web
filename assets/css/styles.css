@@ -559,6 +559,50 @@ tfoot .actions-column {
   margin-top: 0.5rem;
 }
 
+.assignment-bulk {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.assignment-bulk .secondary-button {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--green-deep);
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0.75rem 0;
+}
+
+.pagination[hidden] {
+  display: none;
+}
+
+.page-button {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--green-deep);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.page-button[aria-current="page"] {
+  background: var(--green-deep);
+  color: #fff;
+}
+
+.page-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .dialog-actions .secondary-button {
   border: 1px solid var(--border);
   background: #fff;
