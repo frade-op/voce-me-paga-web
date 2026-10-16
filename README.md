@@ -37,6 +37,12 @@ tests/                testes com node --test
 O app permite importar várias notas por URL e consultar cada nota importada em um painel expansível.
 Cada nota nova começa recolhida; o usuário abre o painel para conferir seus itens.
 Uma tabela consolidada reúne itens das notas e itens adicionados manualmente.
+Hoje, a consulta automática está validada para NFC-e do Rio Grande do Sul (RS), pelo layout do
+portal SVRS. Os portais estaduais diferem entre si, e alguns impõem requisitos de acesso; por
+isso, aceitar um link não garante que a nota será reconhecida.
+O objetivo é superar essas diferenças com integrações e parsers adequados a cada portal, ampliando
+a consulta para mais estados e formatos de NFC-e. A expansão deve respeitar HTTPS e os controles
+de segurança dos portais, sem tentar contornar CAPTCHA ou outras proteções de acesso.
 Edite ou remova itens na tabela consolidada; as notas importadas permanecem imutáveis como registro.
 Itens manuais pedem nome, quantidade, unidade e preço unitário; total é calculado automaticamente.
 Tabela consolidada aparece antes das notas importadas, em cartões separados.

@@ -33,6 +33,8 @@ export const MESSAGES = {
     "participants.remove": "Remover",
     "lookup.title": "Consultar nota fiscal",
     "lookup.description": "Adicione os links das notas que fazem parte da compra.",
+    "lookup.coverage":
+      "A consulta automática está validada para NFC-e do RS. Queremos superar as diferenças entre portais com segurança e ampliar a leitura para mais estados e formatos de NFC-e.",
     "lookup.scanQr": "Ler QR Code",
     "lookup.urlLabel": "Link da nota fiscal",
     "lookup.urlPlaceholder": "Link do QR Code da NFC-e",
@@ -177,6 +179,8 @@ export const MESSAGES = {
     "participants.remove": "Remove",
     "lookup.title": "Look up receipt",
     "lookup.description": "Add the links of the receipts that are part of the purchase.",
+    "lookup.coverage":
+      "Automatic lookup is currently validated for Rio Grande do Sul (RS) NFC-e receipts. We aim to safely overcome differences between state portals and expand support to more states and NFC-e formats.",
     "lookup.scanQr": "Scan QR Code",
     "lookup.urlLabel": "Receipt link",
     "lookup.urlPlaceholder": "NFC-e QR Code link",
